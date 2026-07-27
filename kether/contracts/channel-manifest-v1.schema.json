@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://zhibeigg.github.io/Orryx/kether/contracts/channel-manifest-v1.schema.json",
+  "$id": "https://mayihavek.github.io/Orryx/kether/contracts/channel-manifest-v1.schema.json",
   "title": "Orryx Kether channel manifest v1",
   "type": "object",
   "additionalProperties": false,
