@@ -49,7 +49,13 @@ object StationLoaderManager {
         listenerList.forEach { unregisterListener(it) }
         listenerList.clear()
         stationMap.clear()
-        files("stations", "example.yml") { file ->
+        files(
+            "stations",
+            "example.yml",
+            "无畏护盾初始化-AI生成案例.yml",
+            "无畏护盾受击-AI生成案例.yml",
+            "无畏护盾恢复-AI生成案例.yml",
+        ) { file ->
             val configuration = Configuration.loadFromFile(file)
             val options = configuration.getConfigurationSection("Options")
             val enabledByDefault = !file.nameWithoutExtension.equals("example", ignoreCase = true)

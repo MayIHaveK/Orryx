@@ -73,7 +73,7 @@
 
 默认使用 Kether 脚本引擎，并可通过 TabooLib JavaScript 模块使用 Nashorn ES5.1。技能和中转站设置 `Options.ScriptEngine: JAVASCRIPT` 后可直接编写 JS，短字段支持 `js:` / `kether:` 覆盖，复杂脚本可放在 `plugins/Orryx/scripts/` 并通过 `ScriptFile` 引用。
 
-首次启动或重载时，缺失的内置配置会逐个补齐，不会覆盖管理员已经修改的同名文件。`plugins/Orryx/skills/JavaScript示例.yml` 会默认释放，可使用 `/skill cast <玩家> JavaScript示例 1 false` 直接验证 JS 环境。`plugins/Orryx/stations/example.yml` 仅供阅读，默认 `Enabled: false`；旧版本已释放但没有 `Enabled` 的同名示例也默认禁用，避免监听聊天并反复输出测试值。
+首次启动或重载时，缺失的内置配置会逐个补齐，不会覆盖管理员已经修改的同名文件。技能目录默认释放 `JavaScript示例.yml`、`无尽深渊-AI生成案例.yml`、`无畏护盾-AI生成案例.yml` 和 `裂焱冲击-AI生成案例.yml`；中转站目录默认释放三份与无畏护盾配套的 AI 生成案例。可使用 `/skill cast <玩家> JavaScript示例 1 false` 直接验证 JS 环境。`plugins/Orryx/stations/example.yml` 仅供阅读，默认 `Enabled: false`；旧版本已释放但没有 `Enabled` 的同名示例也默认禁用，避免监听聊天并反复输出测试值。
 
 Kether 内置 **74 个动作文件**：
 

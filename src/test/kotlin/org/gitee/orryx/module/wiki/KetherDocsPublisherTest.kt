@@ -114,7 +114,7 @@ class KetherDocsPublisherTest {
             assertTrue(Json.parseToJsonElement(contract).jsonObject.isNotEmpty())
         }
         assertEquals(
-            "60b31dcb79ea5f280788de83d4b5ee6b70f49fd226fde93475f1775e743f8940",
+            "1467881bb444c5b7516fee356575e8331a8d318e8767cc4f1eda21d69aac3065",
             sha256Contract(KetherDocsContracts.releaseManifest)
         )
     }

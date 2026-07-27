@@ -32,7 +32,14 @@ object SkillLoaderManager {
         if (OrryxSkillReloadEvent().call()) {
             skillMap.clear()
             val castSkillMap = hashMapOf<String, ICastSkill>()
-            files("skills", "操翻诸神拳.yml", "JavaScript示例.yml") { file ->
+            files(
+                "skills",
+                "操翻诸神拳.yml",
+                "JavaScript示例.yml",
+                "无尽深渊-AI生成案例.yml",
+                "无畏护盾-AI生成案例.yml",
+                "裂焱冲击-AI生成案例.yml",
+            ) { file ->
                 val configuration = Configuration.loadFromFile(file)
                 val type = (configuration.getString("Options.Type") ?: "Direct").uppercase()
                 val skill = when(type) {

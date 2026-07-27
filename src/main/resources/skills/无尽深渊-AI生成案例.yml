@@ -38,7 +38,7 @@ Actions: |-
   # 生成黑洞实体
   entity ady 无尽深渊 ARMOR_STAND gravity false timeout lazy *duration viewer "@range 50" they "@origin"
   # 计算持续秒数用于循环
-  set sec to math floor math div [ lazy *duration 20 ]
+  set sec to floor math div [ lazy *duration 20 ]
   # 主循环 - 每秒执行一次
   for i in range 1 to &sec then {
     sync {
