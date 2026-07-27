@@ -469,10 +469,14 @@ class EditorFilePolicy(
     }
 
     private fun listChildrenChecked(directory: Path, filterAllowlist: Boolean): List<Path> {
-        val children = Files.newDirectoryStream(directory).use { stream ->
-            stream.iterator().asSequence()
-                .filter { child -> !filterAllowlist || isAllowedTopLevel(child.fileName.toString()) }
-                .toList()
+        val allChildren = Files.newDirectoryStream(directory).use { stream ->
+            stream.iterator().asSequence().toList()
+        }
+        allChildren.firstOrNull { Files.isSymbolicLink(it) }?.let { link ->
+            throw PolicyException("禁止访问符号链接: ${displayPath(link)}")
+        }
+        val children = allChildren.filter { child ->
+            !filterAllowlist || isAllowedTopLevel(child.fileName.toString())
         }
         val namesByFoldedCase = mutableMapOf<String, String>()
         children.forEach { child ->
