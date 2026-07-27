@@ -2,8 +2,10 @@ package org.gitee.orryx.core.kether.parameter
 
 import org.bukkit.Location
 import org.bukkit.entity.Player
-import org.gitee.orryx.core.kether.ScriptManager
 import org.gitee.orryx.core.key.IBindKey
+import org.gitee.orryx.core.script.OrryxScriptRuntime
+import org.gitee.orryx.core.script.ScriptInvocation
+import org.gitee.orryx.core.script.ScriptLanguage
 import org.gitee.orryx.core.skill.ISkill
 import org.gitee.orryx.core.skill.SkillLoaderManager
 import org.gitee.orryx.core.targets.ITargetLocation
@@ -16,6 +18,21 @@ import taboolib.common5.clong
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.ConcurrentHashMap
+
+internal fun executeSkillVariableScript(
+    skillKey: String,
+    variableKey: String,
+    source: String,
+    language: ScriptLanguage,
+    invocation: ScriptInvocation,
+): CompletableFuture<Any?> {
+    return OrryxScriptRuntime.execute(
+        "$skillKey@variable:$variableKey",
+        source,
+        language,
+        invocation,
+    ).future
+}
 
 class SkillParameter(val skill: String?, val player: Player, level: Int = 1): IParameter {
 
@@ -93,14 +110,23 @@ class SkillParameter(val skill: String?, val player: Player, level: Int = 1): IP
         lazies[key]?.let { return CompletableFuture.completedFuture(it) }
 
         fun load(): CompletableFuture<Any?> {
-            val action = getSkill()?.variables?.get(key)
+            val configuredSkill = getSkill()
+            val action = configuredSkill?.variables?.get(key)
             if (action == null) {
                 warning("未找到技能 $skill 的变量 $key ")
                 return CompletableFuture.completedFuture(null)
             }
-            return ScriptManager.runScript(proxyCommandSender, this, action) {
-                set("level", level)
-            }.thenApply { value ->
+            return executeSkillVariableScript(
+                skill ?: "skill",
+                key,
+                action,
+                configuredSkill.scriptLanguage,
+                ScriptInvocation(
+                    proxyCommandSender,
+                    this,
+                    buildTriggerVariables() + ("level" to level),
+                ),
+            ).thenApply { value ->
                 if (value == null) {
                     warning("未找到技能 $skill 的变量 $key ")
                 } else {

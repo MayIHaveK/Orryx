@@ -1112,13 +1112,13 @@ Orryx 通过 TabooLib JavaScript 模块加载 Nashorn。Java 8 使用 JDK 内置
 插件会在每次加载配置时补齐缺失的内置示例，但不会覆盖已有文件：
 
 - `plugins/Orryx/skills/JavaScript示例.yml`：默认启用，可执行 `/skill cast <玩家> JavaScript示例 1 false` 测试。
-- `plugins/Orryx/skills/无尽深渊-AI生成案例.yml`：`DIRECT AIM` 落点、范围吸引、容器与循环伤害示例。
-- `plugins/Orryx/skills/裂焱冲击-AI生成案例.yml`：`DIRECT` 位移、药水效果与路径伤害示例。
-- `plugins/Orryx/skills/无畏护盾-AI生成案例.yml`：与三份同名中转站案例配套的 `PASSIVE` 示例。
-- `plugins/Orryx/stations/无畏护盾初始化-AI生成案例.yml`、`无畏护盾受击-AI生成案例.yml`、`无畏护盾恢复-AI生成案例.yml`：展示被动技能的初始化、伤害吸收与脱战恢复流程。
+- `plugins/Orryx/skills/无尽深渊-AI生成案例.yml`：完整的 `DIRECT AIM` JavaScript 示例，直接调用 Bukkit 粒子与实体 API，并用 `scheduler.repeat` 实现吸引、循环伤害和斩杀。
+- `plugins/Orryx/skills/裂焱冲击-AI生成案例.yml`：完整的 `DIRECT` JavaScript 示例，展示位移、药水、粒子、实体查询与路径伤害。
+- `plugins/Orryx/skills/无畏护盾-AI生成案例.yml`：与三份 JavaScript 中转站配套的 `PASSIVE` 示例，技能本体负责等级与变量计算。
+- `plugins/Orryx/stations/无畏护盾初始化-AI生成案例.yml`、`无畏护盾受击-AI生成案例.yml`、`无畏护盾恢复-AI生成案例.yml`：用 JavaScript 访问 Orryx 技能 API、玩家档案、`Flag` 和伤害事件，完成初始化、伤害吸收与脱战恢复。
 - `plugins/Orryx/stations/example.yml`：默认禁用；设置 `Options.Enabled: true` 后才会注册。旧版没有 `Enabled` 字段的同名示例同样按禁用处理，避免它监听聊天并输出示例变量。
 
-可先运行 `/or script environment` 查看引擎名称、版本和探针结果，再运行 `/or reload` 重新加载技能及中转站配置。
+可先运行 `/or script environment` 查看引擎名称、版本和探针结果，再运行 `/or reload` 重新加载技能及中转站配置。主动技能使用 `/or skill cast <玩家名> <技能名>` 测试；`DIRECT AIM` 技能进入瞄准后左键确认落点、右键取消。
 
 **技能内联脚本：**
 

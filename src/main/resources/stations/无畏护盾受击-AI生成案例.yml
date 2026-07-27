@@ -1,19 +1,27 @@
 Options:
   Event: "Player Damaged Pre"
+  ScriptEngine: "JAVASCRIPT"
   Weight: 1
   Priority: "normal"
 Actions: |-
-  if &isCancelled then exit
-  if check orryx skill level 无畏护盾 >= 1 then {
-    # 重置5秒冷却计时
-    flag 无畏护盾冷却 to true timeout 100
-    if check flag 无畏护盾 >= &event[damage] then {
-      # 护盾完全吸收
-      event cancelled true
-      flag 无畏护盾 to math sub [ flag 无畏护盾 &event[damage] ]
-    } else if check flag 无畏护盾 > 0 then {
-      # 护盾部分吸收
-      set &event[damage] to math sub [ &event[damage] flag 无畏护盾 ]
-      flag 无畏护盾 to 0
-    }
+  function main() {
+      if (event.isCancelled()) return false;
+      var Flag = Java.type("org.gitee.orryx.core.profile.Flag");
+      return orryx.profileAPI.modifyProfile(player, function(profile) {
+          var shieldFlag = profile.getFlag("无畏护盾");
+          if (shieldFlag == null) return false;
+
+          var shield = Number(shieldFlag.getValue());
+          var incoming = Number(event.getDamage());
+          profile.setFlag("无畏护盾冷却", new Flag(true, false, 5000, 0), false);
+
+          if (shield >= incoming) {
+              event.setCancelled(true);
+              profile.setFlag("无畏护盾", new Flag(shield - incoming, false, 0, 0), false);
+          } else if (shield > 0) {
+              event.setDamage(incoming - shield);
+              profile.setFlag("无畏护盾", new Flag(0, false, 0, 0), false);
+          }
+          return true;
+      });
   }

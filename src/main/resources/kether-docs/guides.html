@@ -258,7 +258,7 @@ Actions: |-
         </ol>
     </section>
 
-    <aside class="guide-note"><strong>现成范例</strong><span><code>无尽深渊-AI生成案例.yml</code> 是可直接测试的 <code>DIRECT AIM</code> 技能，包含落点实体、范围吸引、循环伤害和斩杀判断。</span></aside>
+    <aside class="guide-note"><strong>现成范例</strong><span><code>无尽深渊-AI生成案例.yml</code> 是完整的 <code>DIRECT AIM</code> JavaScript 技能。它用 <code>Java.type</code> 调用 Bukkit 粒子与实体 API，并通过 <code>scheduler.repeat</code> 实现吸引、循环伤害和斩杀，不依赖 Adyeshach 或客户端材质包。</span></aside>
     <nav class="guide-next" aria-label="下一篇指南"><span>接下来</span><a href="#guides/ai-examples">从内置示例继续开发 →</a></nav>
 </article>
 
@@ -275,18 +275,18 @@ Actions: |-
             <thead><tr><th>文件</th><th>适合学习</th><th>测试方式</th></tr></thead>
             <tbody>
                 <tr><td><code>JavaScript示例.yml</code></td><td>JS 引擎、短字段覆盖和 <code>main()</code></td><td>直接 cast</td></tr>
-                <tr><td><code>裂焱冲击-AI生成案例.yml</code></td><td>位移、药水效果、路径循环伤害</td><td>直接 cast</td></tr>
-                <tr><td><code>无尽深渊-AI生成案例.yml</code></td><td>指向落点、实体、容器、范围吸引和循环</td><td>cast 后左键确认</td></tr>
-                <tr><td><code>无畏护盾-AI生成案例.yml</code></td><td>被动技能与事件驱动的职责分离</td><td>配合中转站触发</td></tr>
+                <tr><td><code>裂焱冲击-AI生成案例.yml</code></td><td>JS 调用 Bukkit 位移、药水、粒子和实体伤害</td><td>直接 cast</td></tr>
+                <tr><td><code>无尽深渊-AI生成案例.yml</code></td><td>JS 读取指向落点、绘制粒子并管理持续任务</td><td>cast 后左键确认</td></tr>
+                <tr><td><code>无畏护盾-AI生成案例.yml</code></td><td>JS 访问 Orryx API、Flag 和伤害事件</td><td>配合三份 JS 中转站触发</td></tr>
             </tbody>
         </table></div>
         <p>测试直放或指向技能时使用：</p>
-        <pre class="guide-code"><code>/skill cast &lt;玩家名&gt; &lt;技能名&gt; 1 false</code></pre>
+        <pre class="guide-code"><code>/or skill cast &lt;玩家名&gt; &lt;技能名&gt;</code></pre>
     </section>
 
     <section class="guide-section">
         <h2>为什么护盾拆成多份文件</h2>
-        <p>被动技能只描述等级和变量；“多久未受击”“什么时候创建护盾”“受到伤害如何扣除护盾”由中转站监听相应事件。这样每个文件只负责一种触发时机，也便于单独关闭和排错。</p>
+        <p>被动技能只描述等级和 JS 变量；“多久未受击”“什么时候创建护盾”“受到伤害如何扣除护盾”由三份 JavaScript 中转站监听相应事件。这样每个文件只负责一种触发时机，也便于单独关闭和排错。</p>
         <p><code>stations/example.yml</code> 默认禁用，避免演示监听器在生产服反复输出。需要启用某个中转站时，明确设置 <code>Options.Enabled: true</code>，然后执行 <code>/or reload</code>。</p>
     </section>
 

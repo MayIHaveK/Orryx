@@ -1,15 +1,18 @@
 Options:
   Event: "Orryx Player Flag Change Post"
+  ScriptEngine: "JAVASCRIPT"
   Weight: 1
   Priority: "normal"
 Actions: |-
-  if check &event[flagName] == 无畏护盾冷却 then {
-    # 冷却到期（5秒未受击），恢复护盾
-    if check &event[newFlag] == null then {
-      if check orryx skill level 无畏护盾 >= 1 then {
-        set lvl to orryx skill level 无畏护盾
-        set rate to calc "0.10+0.025*(&lvl-1)"
-        flag 无畏护盾 to math mul [ &rate player max health ]
-      }
-    }
+  function main() {
+      if (event.getFlagName() !== "无畏护盾冷却" || event.getNewFlag() != null) return false;
+      var Flag = Java.type("org.gitee.orryx.core.profile.Flag");
+      return orryx.skillAPI.modifySkill(player, "无畏护盾-AI生成案例", null, function(playerSkill) {
+          return playerSkill.getLevel();
+      }).thenApply(function(skillLevel) {
+          if (skillLevel == null || Number(skillLevel) < 1) return false;
+          var rate = 0.10 + 0.025 * (Number(skillLevel) - 1);
+          event.getProfile().setFlag("无畏护盾", new Flag(rate * player.getMaxHealth(), false, 0, 0), false);
+          return true;
+      });
   }

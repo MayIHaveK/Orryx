@@ -1,6 +1,7 @@
 Options:
   Type: "DIRECT"
   Name: "裂焱冲击"
+  ScriptEngine: "JAVASCRIPT"
   Sort: 0
   Icon: "裂焱冲击"
   XMaterial: "BLAZE_ROD"
@@ -18,31 +19,64 @@ Options:
   IsLocked: false
   MinLevel: 1
   MaxLevel: 6
-  UpgradePointAction: 1
+  UpgradePointAction: "js: return 1;"
   UpLevelCheckAction: |-
-    check orryx level >= calc "2+2*(to-1)"
-  CastCheckAction: true
+    var targetLevel = Number(vars.get("to"));
+    return orryx.jobAPI.modifyJob(player, null, function(playerJob) {
+        return playerJob.getLevel() >= 2 + 2 * (targetLevel - 1);
+    });
+  CastCheckAction: "js: return player != null && player.isOnline();"
   Variables:
-    Silence: 10
+    Silence: "js: return 10;"
     Mana: |-
-      calc "20-1*(level-1)"
+      return 20 - 1 * (Number(level) - 1);
     Cooldown: |-
-      calc "(10-0.5*(level-1))*20"
+      return (10 - 0.5 * (Number(level) - 1)) * 20;
     DAMAGE: |-
-      calc "20+3*(level-1)"
+      return 20 + 3 * (Number(level) - 1);
     SPEED: |-
-      calc "1.5+0.1*(level-1)"
+      return 1.5 + 0.1 * (Number(level) - 1);
 Actions: |-
-  # 残影效果
-  ghost 6 8 0 viewers "@range 50"
-  # 向前冲刺
-  sync {
-    launch lazy *SPEED -0.1 0 true
-    potion set SLOW 12 level 5
+  function isFriendly(target) {
+      if (target.getType().name() !== "PLAYER") return false;
+      var scoreboard = player.getScoreboard();
+      var team = scoreboard.getEntryTeam(player.getName());
+      return team != null && team.hasEntry(target.getName());
   }
-  # 沿途火焰伤害（每2tick检测一次，共5段覆盖冲刺路径）
-  for i in range 1 to 5 then {
-    sleep 2
-    damage lazy *DAMAGE false they "@range 2.5 !@self !@type ARMOR_STAND !@team" source "@self" type FIRE
+
+  function main() {
+      var Particle = Java.type("org.bukkit.Particle");
+      var PotionEffect = Java.type("org.bukkit.potion.PotionEffect");
+      var PotionEffectType = Java.type("org.bukkit.potion.PotionEffectType");
+      var LivingEntity = Java.type("org.bukkit.entity.LivingEntity");
+      var damage = Number(parameter.getVariable("DAMAGE", true));
+      var speed = Number(parameter.getVariable("SPEED", true));
+      var direction = player.getLocation().getDirection().normalize();
+
+      player.setVelocity(direction.multiply(speed).setY(-0.1));
+      var slowness = PotionEffectType.getByName("SLOWNESS");
+      if (slowness == null) slowness = PotionEffectType.getByName("SLOW");
+      if (slowness != null) player.addPotionEffect(new PotionEffect(slowness, 12, 4, false, false, false));
+
+      var segment = 0;
+      var task = scheduler.repeat(function() {
+          segment++;
+          var center = player.getLocation().clone().add(0, 0.8, 0);
+          var world = center.getWorld();
+          world.spawnParticle(Particle.FLAME, center, 24, 0.8, 0.45, 0.8, 0.03);
+          world.spawnParticle(Particle.LAVA, center, 5, 0.65, 0.25, 0.65, 0.0);
+
+          var targets = world.getNearbyEntities(center, 2.5, 2.5, 2.5).toArray();
+          for (var i = 0; i < targets.length; i++) {
+              var target = targets[i];
+              if (!LivingEntity.class.isInstance(target)) continue;
+              if (target.getUniqueId().equals(player.getUniqueId())) continue;
+              if (target.getType().name() === "ARMOR_STAND" || isFriendly(target)) continue;
+              target.setFireTicks(Math.max(target.getFireTicks(), 40));
+              target.damage(damage, player);
+          }
+
+          if (segment >= 5) task.complete(true);
+      }, 2, 2);
+      return task;
   }
-  sleep 10

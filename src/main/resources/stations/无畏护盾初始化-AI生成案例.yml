@@ -1,10 +1,20 @@
 Options:
   Event: "Dragon Cache Load"
+  ScriptEngine: "JAVASCRIPT"
   Weight: 1
   Priority: "normal"
 Actions: |-
-  if check orryx skill level 无畏护盾 >= 1 then {
-    set lvl to orryx skill level 无畏护盾
-    set rate to calc "0.10+0.025*(&lvl-1)"
-    flag 无畏护盾 to math mul [ &rate player max health ]
+  function main() {
+      var Flag = Java.type("org.gitee.orryx.core.profile.Flag");
+      return orryx.skillAPI.modifySkill(player, "无畏护盾-AI生成案例", null, function(playerSkill) {
+          return playerSkill.getLevel();
+      }).thenCompose(function(skillLevel) {
+          if (skillLevel == null || Number(skillLevel) < 1) return Java.type("java.util.concurrent.CompletableFuture").completedFuture(false);
+          var rate = 0.10 + 0.025 * (Number(skillLevel) - 1);
+          var amount = rate * player.getMaxHealth();
+          return orryx.profileAPI.modifyProfile(player, function(profile) {
+              profile.setFlag("无畏护盾", new Flag(amount, false, 0, 0), false);
+              return true;
+          });
+      });
   }

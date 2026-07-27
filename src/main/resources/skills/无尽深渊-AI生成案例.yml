@@ -1,11 +1,12 @@
 Options:
   Type: "DIRECT AIM"
   Name: "无尽深渊"
+  ScriptEngine: "JAVASCRIPT"
   Sort: 0
   Icon: "无尽深渊"
   XMaterial: "IRON_SWORD"
-  AimRadiusAction: 20
-  AimSizeAction: 8
+  AimRadiusAction: "js: return 20;"
+  AimSizeAction: "js: return 8;"
   Description:
     - '&f技能等级&7: &e{{ &level }} &f级'
     - '&f冷却时间&7: &3{{ scaled math div [ lazy *cooldown 20.0 ] }} &fs'
@@ -20,41 +21,74 @@ Options:
   IsLocked: false
   MinLevel: 1
   MaxLevel: 8
-  UpgradePointAction: 1
+  UpgradePointAction: "js: return 1;"
   UpLevelCheckAction: |-
-    check orryx level >= calc "5+3*(to-1)"
-  CastCheckAction: true
+    var targetLevel = Number(vars.get("to"));
+    return orryx.jobAPI.modifyJob(player, null, function(playerJob) {
+        return playerJob.getLevel() >= 5 + 3 * (targetLevel - 1);
+    });
+  CastCheckAction: "js: return player != null && player.isOnline();"
   Variables:
-    Silence: 20
+    Silence: "js: return 20;"
     Mana: |-
-      calc "80+40/7*(level-1)"
+      return 80 + 40 / 7 * (Number(level) - 1);
     Cooldown: |-
-      calc "(30-5/7*(level-1))*20"
+      return (30 - 5 / 7 * (Number(level) - 1)) * 20;
     damage: |-
-      calc "100+50/7*(level-1)"
+      return 100 + 50 / 7 * (Number(level) - 1);
     duration: |-
-      calc "(5+5/7*(level-1))*20"
+      return (5 + 5 / 7 * (Number(level) - 1)) * 20;
 Actions: |-
-  # 生成黑洞实体
-  entity ady 无尽深渊 ARMOR_STAND gravity false timeout lazy *duration viewer "@range 50" they "@origin"
-  # 计算持续秒数用于循环
-  set sec to floor math div [ lazy *duration 20 ]
-  # 主循环 - 每秒执行一次
-  for i in range 1 to &sec then {
-    sync {
-      # 吸引8格范围内敌人向黑洞中心聚拢
-      drag 0.5 true they "@range 8 !@self !@type ARMOR_STAND !@team"
-    }
-    # 对8格范围内敌人造成伤害
-    damage lazy *damage false they "@range 8 !@self !@type ARMOR_STAND !@team" source "@self" type MAGIC
-    # 斩杀：3格内血量低于10%的敌人
-    set closeTargets to container they "@range 3 !@self !@type ARMOR_STAND !@team"
-    for t in &closeTargets[list] then {
-      set hp to entity HEALTH they &t
-      set maxHp to entity MAX_HEALTH they &t
-      if check &hp <= math mul [ &maxHp 0.1 ] then {
-        damage 99999 false they &t source "@self" type MAGIC
-      }
-    }
-    sleep 20
+  function isFriendly(target) {
+      if (target.getType().name() !== "PLAYER") return false;
+      var scoreboard = player.getScoreboard();
+      var team = scoreboard.getEntryTeam(player.getName());
+      return team != null && team.hasEntry(target.getName());
+  }
+
+  function main() {
+      var Particle = Java.type("org.bukkit.Particle");
+      var LivingEntity = Java.type("org.bukkit.entity.LivingEntity");
+      var center = parameter.getOriginLocation().clone().add(0, 0.35, 0);
+      var world = center.getWorld();
+      var duration = Number(parameter.getVariable("DURATION", true));
+      var damage = Number(parameter.getVariable("DAMAGE", true));
+      var elapsed = 0;
+
+      var task = scheduler.repeat(function() {
+          elapsed += 2;
+
+          world.spawnParticle(Particle.PORTAL, center, 45, 1.5, 0.8, 1.5, 0.12);
+          world.spawnParticle(Particle.DRAGON_BREATH, center, 18, 0.65, 0.45, 0.65, 0.02);
+          for (var angle = 0; angle < Math.PI * 2; angle += Math.PI / 12) {
+              var wave = Math.sin(angle * 3 + elapsed * 0.14) * 0.22;
+              var ring = center.clone().add(Math.cos(angle) * 2.8, wave, Math.sin(angle) * 2.8);
+              world.spawnParticle(Particle.SOUL_FIRE_FLAME, ring, 1, 0, 0, 0, 0);
+          }
+
+          var targets = world.getNearbyEntities(center, 8, 8, 8).toArray();
+          for (var i = 0; i < targets.length; i++) {
+              var target = targets[i];
+              if (!LivingEntity.class.isInstance(target)) continue;
+              if (target.getUniqueId().equals(player.getUniqueId())) continue;
+              if (target.getType().name() === "ARMOR_STAND" || isFriendly(target)) continue;
+
+              var pull = center.toVector().subtract(target.getLocation().toVector());
+              if (pull.lengthSquared() > 0.04) {
+                  target.setVelocity(target.getVelocity().multiply(0.65).add(pull.normalize().multiply(0.22)));
+              }
+
+              if (elapsed % 20 === 0) {
+                  var maxHealth = target.getMaxHealth();
+                  if (target.getLocation().distanceSquared(center) <= 9 && target.getHealth() <= maxHealth * 0.1) {
+                      target.damage(99999, player);
+                  } else {
+                      target.damage(damage, player);
+                  }
+              }
+          }
+
+          if (elapsed >= duration) task.complete(true);
+      }, 0, 2);
+      return task;
   }
