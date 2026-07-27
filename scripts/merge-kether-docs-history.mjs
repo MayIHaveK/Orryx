@@ -26,8 +26,7 @@ async function walk(directory) {
 function isImmutable(path) {
   const normalized = path.split(sep).join("/")
   return normalized.startsWith("kether/releases/") ||
-    normalized.startsWith("kether/snapshots/") ||
-    normalized.startsWith("kether/contracts/")
+    normalized.startsWith("kether/snapshots/")
 }
 
 await mkdir(historyRoot, { recursive: true })

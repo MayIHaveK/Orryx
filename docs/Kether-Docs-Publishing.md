@@ -119,6 +119,8 @@ KETHER_DOCS_PREVIOUS_RELEASE_ID=<上一版 releaseId>
 
 Pages artifact 会替换整站，因此 `kether-docs` 分支负责保存历史发布目录。线上切换发生在 Pages deployment；部署失败不会破坏之前的线上 stable。
 
+`kether/releases/` 与 `kether/snapshots/` 中的发布资产不可覆盖。顶层 `kether/contracts/`、兼容入口和通道指针代表当前生成器合同，发布新版本或迁移 Pages 域名时允许更新。
+
 临时 Paper 使用 `server-port=0` 绑定随机可用端口，不会占用开发服务器常用的 `25565`，任务结束后由 Gradle 负责关闭。
 
 ## 回滚
