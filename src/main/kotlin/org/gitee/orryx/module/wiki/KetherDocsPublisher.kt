@@ -319,6 +319,7 @@ object KetherDocsPublisher {
         require(File(siteDirectory, "index.html").length() > 0L) { "index.html 为空" }
         require(File(siteDirectory, "site.css").length() > 0L) { "site.css 为空" }
         require(File(siteDirectory, "site.js").length() > 0L) { "site.js 为空" }
+        require(File(siteDirectory, "guides.html").length() > 0L) { "guides.html 为空" }
         require(File(siteDirectory, "kether/channels/${metadata.channel}.json").length() in 1..32L * 1024) {
             "channel manifest 为空或超过 32 KiB"
         }
@@ -344,7 +345,7 @@ object KetherDocsPublisher {
             .replace("{{VERSION}}", metadata.version.htmlEscape())
             .replace("{{RELEASE_ID}}", metadata.releaseId.htmlEscape())
         KetherDocsContract.writeUtf8(File(siteDirectory, "index.html"), index)
-        for (name in listOf("site.css", "site.js")) {
+        for (name in listOf("site.css", "site.js", "guides.html")) {
             KetherDocsContract.writeUtf8(File(siteDirectory, name), readSiteResource(name))
         }
     }

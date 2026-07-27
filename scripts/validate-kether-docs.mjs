@@ -266,10 +266,14 @@ for (const legacy of ["manifest.json", "kether-registry.json", "actions-schema.j
   const info = await stat(join(site, "kether", legacy))
   check(info.isFile() && info.size > 0, `missing legacy compatibility file ${legacy}`)
 }
-for (const asset of ["index.html", "site.css", "site.js"]) {
+for (const asset of ["index.html", "site.css", "site.js", "guides.html"]) {
   const info = await stat(join(site, asset))
   check(info.isFile() && info.size > 0, `missing documentation site asset ${asset}`)
 }
+const guideSource = await readFile(join(site, "guides.html"), "utf8")
+const guideIds = [...guideSource.matchAll(/data-guide-id="([a-z0-9-]+)"/g)].map((match) => match[1])
+check(guideIds.length >= 8, `expected at least 8 narrative guides, found ${guideIds.length}`)
+check(new Set(guideIds).size === guideIds.length, "guide IDs must be unique")
 
 console.log(JSON.stringify({
   channel: channel.channel,

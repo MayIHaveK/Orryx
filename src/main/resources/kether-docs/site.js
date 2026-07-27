@@ -1,10 +1,10 @@
 "use strict";
 
 const sections = {
-  actions: { label: "语句" }, selectors: { label: "选择器" }, triggers: { label: "触发器" },
-  properties: { label: "属性" }, types: { label: "类型" }
+  guides: { label: "指南" }, actions: { label: "语句" }, selectors: { label: "选择器" },
+  triggers: { label: "触发器" }, properties: { label: "属性" }, types: { label: "类型" }
 };
-const state = { registry: null, section: "actions", query: "", selectedId: null };
+const state = { registry: null, guides: [], section: "guides", query: "", selectedId: null };
 const tabs = document.querySelector("#sectionTabs");
 const navList = document.querySelector("#navList");
 const resultSummary = document.querySelector("#resultSummary");
@@ -19,19 +19,34 @@ const array = (value) => Array.isArray(value) ? value : [];
 const displayValue = (value) => value === null || value === undefined || value === "" ? "-" : String(value);
 const code = (value) => `<code class="inline-code">${escapeHtml(displayValue(value))}</code>`;
 
+function parseGuides(source) {
+  const document = new DOMParser().parseFromString(source, "text/html");
+  return [...document.querySelectorAll("article[data-guide-id]")].map((article, order) => ({
+    id: article.dataset.guideId,
+    name: article.dataset.title,
+    description: article.dataset.summary,
+    group: article.dataset.group || "指南",
+    order,
+    search: article.textContent,
+    content: article.innerHTML
+  })).filter((guide) => guide.id && guide.name);
+}
+
 function itemsFor(section) {
+  if (section === "guides") return state.guides;
   const source = state.registry?.[section];
   if (Array.isArray(source)) return source;
   return Object.entries(source ?? {}).map(([id, value]) => ({ id, ...value }));
 }
 
 function searchText(item) {
-  return [item.name, item.id, item.description, item.syntax, item.category, item.group, item.source?.group,
+  return [item.name, item.id, item.description, item.syntax, item.category, item.group, item.search, item.source?.group,
     ...array(item.aliases).map((alias) => typeof alias === "string" ? alias : alias.name)]
     .filter(Boolean).join(" ").toLocaleLowerCase("zh-CN");
 }
 
 function groupName(item) {
+  if (state.section === "guides") return item.group || "指南";
   if (state.section === "actions") return item.source?.group || item.category || "其他";
   if (state.section === "triggers") return item.category || "其他";
   if (state.section === "properties") return item.group || "其他";
@@ -45,9 +60,14 @@ function filteredItems() {
 }
 
 function parseHash() {
+  const previousSection = state.section;
   const [section, encodedId] = location.hash.slice(1).split("/");
-  if (sections[section]) state.section = section;
+  state.section = sections[section] ? section : "guides";
   state.selectedId = encodedId ? decodeURIComponent(encodedId) : null;
+  if (state.section !== previousSection) {
+    state.query = "";
+    searchInput.value = "";
+  }
 }
 
 function updateHash() {
@@ -59,11 +79,13 @@ function updateHash() {
 function renderTabs() {
   tabs.innerHTML = Object.entries(sections).map(([key, section]) => `<button class="tab-button" type="button" role="tab"
     data-section="${key}" aria-selected="${key === state.section}">${section.label}<span class="tab-count">${itemsFor(key).length}</span></button>`).join("");
+  searchInput.placeholder = state.section === "guides" ? "搜索指南" : "搜索名称、语法或说明";
 }
 
 function renderNavigation() {
   const items = filteredItems();
-  resultSummary.textContent = state.query ? `找到 ${items.length} 项` : `共 ${items.length} 项`;
+  const unit = state.section === "guides" ? "篇" : "项";
+  resultSummary.textContent = state.query ? `找到 ${items.length} ${unit}` : `共 ${items.length} ${unit}`;
   if (!items.some((item) => item.id === state.selectedId)) state.selectedId = items[0]?.id ?? null;
   updateHash();
   if (!items.length) {
@@ -76,13 +98,18 @@ function renderNavigation() {
     if (!groups.has(group)) groups.set(group, []);
     groups.get(group).push(item);
   }
-  navList.innerHTML = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b, "zh-CN")).map(([group, entries]) => `
-    <section class="nav-group"><h2 class="nav-group-title">${escapeHtml(group)}</h2>
-    ${entries.sort((a, b) => String(a.name).localeCompare(String(b.name), "zh-CN")).map((item) => `
-      <button class="nav-item" type="button" data-id="${escapeHtml(item.id)}" aria-current="${item.id === state.selectedId ? "page" : "false"}">
-        <span class="nav-name">${escapeHtml(item.name || item.id)}</span>
-        <span class="nav-description">${escapeHtml(item.description || item.rawType || item.id)}</span>
-      </button>`).join("")}</section>`).join("");
+  const groupEntries = [...groups.entries()];
+  if (state.section !== "guides") groupEntries.sort(([a], [b]) => a.localeCompare(b, "zh-CN"));
+  navList.innerHTML = groupEntries.map(([group, entries]) => {
+    const sortedEntries = state.section === "guides" ? entries.sort((a, b) => a.order - b.order) :
+      entries.sort((a, b) => String(a.name).localeCompare(String(b.name), "zh-CN"));
+    return `<section class="nav-group"><h2 class="nav-group-title">${escapeHtml(group)}</h2>
+      ${sortedEntries.map((item) => `
+        <button class="nav-item ${state.section === "guides" ? "guide-nav" : ""}" type="button" data-id="${escapeHtml(item.id)}" aria-current="${item.id === state.selectedId ? "page" : "false"}">
+          <span class="nav-name">${escapeHtml(item.name || item.id)}</span>
+          <span class="nav-description">${escapeHtml(item.description || item.rawType || item.id)}</span>
+        </button>`).join("")}</section>`;
+  }).join("");
 }
 
 function badges(values) {
@@ -163,10 +190,28 @@ function renderType(item) {
   ]);
 }
 
+function linkGuideReferences() {
+  for (const link of content.querySelectorAll("[data-reference-name]")) {
+    const section = link.dataset.referenceSection;
+    const wanted = link.dataset.referenceName.toLocaleLowerCase("zh-CN");
+    const item = itemsFor(section).find((entry) => [entry.id, entry.name,
+      ...array(entry.aliases).map((alias) => typeof alias === "string" ? alias : alias.name)]
+      .filter(Boolean).some((value) => String(value).toLocaleLowerCase("zh-CN") === wanted));
+    if (item) link.href = `#${section}/${encodeURIComponent(item.id)}`;
+  }
+}
+
 function renderDocument() {
   const item = itemsFor(state.section).find((entry) => entry.id === state.selectedId);
   if (!item) {
+    document.title = "Orryx 文档";
     content.innerHTML = '<div class="error-state"><strong>没有可显示的条目</strong><span>请调整搜索条件或选择其他文档类型。</span></div>';
+    return;
+  }
+  document.title = `${item.name || item.id} | Orryx 文档`;
+  if (state.section === "guides") {
+    content.innerHTML = `<article class="doc guide">${item.content}</article>`;
+    linkGuideReferences();
     return;
   }
   const aliases = array(item.aliases).map((alias) => typeof alias === "string" ? alias : alias.name).filter(Boolean);
@@ -210,13 +255,23 @@ menuButton.addEventListener("click", () => {
   const open = document.body.classList.toggle("sidebar-open"); menuButton.setAttribute("aria-expanded", String(open));
 });
 backdrop.addEventListener("click", closeSidebar);
-window.addEventListener("hashchange", () => { parseHash(); renderAll(); });
+window.addEventListener("hashchange", () => { parseHash(); renderAll(); content.scrollTop = 0; closeSidebar(); });
 
-fetch("kether/kether-registry.json").then((response) => {
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  return response.json();
-}).then((registry) => {
-  state.registry = registry; parseHash(); renderAll();
+Promise.all([
+  fetch("kether/kether-registry.json").then((response) => {
+    if (!response.ok) throw new Error(`Registry HTTP ${response.status}`);
+    return response.json();
+  }),
+  fetch("guides.html").then((response) => {
+    if (!response.ok) throw new Error(`Guides HTTP ${response.status}`);
+    return response.text();
+  })
+]).then(([registry, guideSource]) => {
+  state.registry = registry;
+  state.guides = parseGuides(guideSource);
+  if (!state.guides.length) throw new Error("指南内容为空");
+  parseHash();
+  renderAll();
 }).catch((error) => {
   content.innerHTML = `<div class="error-state"><strong>文档数据加载失败</strong><span>${escapeHtml(error.message)}</span><a href="kether/kether-registry.json">直接打开 Registry JSON</a></div>`;
 });

@@ -1,0 +1,356 @@
+<article data-guide-id="quick-start" data-title="快速开始" data-summary="从安装、首次生成配置到成功释放第一个技能" data-group="入门">
+    <header class="guide-header">
+        <p class="doc-breadcrumb">指南 / 入门</p>
+        <h1>快速开始</h1>
+        <p class="guide-lead">这一页只做一件事：确认 Orryx 已正确加载，并在游戏里成功释放一个内置示例技能。</p>
+    </header>
+
+    <section class="guide-section">
+        <h2>1. 安装并首次启动</h2>
+        <ol>
+            <li>从 GitHub Releases 下载最新的 Orryx JAR。</li>
+            <li>把 JAR 放入 Paper 服务端的 <code>plugins</code> 目录。</li>
+            <li>完整启动一次服务器，等待 Orryx 加载完成。</li>
+        </ol>
+        <p>首次启动或重载时，Orryx 会补齐缺失的内置配置，但不会覆盖同名文件。因此已经修改过的技能不会因为升级插件而被重置。</p>
+        <aside class="guide-note"><strong>应该看到什么</strong><span><code>plugins/Orryx/skills/</code> 中会出现 JavaScript、直放、指向和被动技能示例；<code>plugins/Orryx/stations/</code> 中会出现中转站示例。</span></aside>
+    </section>
+
+    <section class="guide-section">
+        <h2>2. 检查脚本环境</h2>
+        <p>进入服务器后运行：</p>
+        <pre class="guide-code"><code>/or script environment</code></pre>
+        <p>诊断结果会列出实际的 JavaScript 引擎、版本以及编译与执行探针。引擎状态为“可用”后，再测试内置 JavaScript 技能：</p>
+        <pre class="guide-code"><code>/skill cast &lt;玩家名&gt; JavaScript示例 1 false</code></pre>
+        <p>成功时，目标玩家会收到包含技能等级的绿色 Orryx 消息。这个测试同时验证了技能加载、命令入口和 JavaScript 执行链路。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>3. 修改与重载</h2>
+        <p>打开 <code>plugins/Orryx/skills/JavaScript示例.yml</code>，修改消息文字，然后执行：</p>
+        <pre class="guide-code"><code>/or reload</code></pre>
+        <p>再次释放技能。如果新文字出现，你的最小开发闭环已经跑通：编辑配置、重载、游戏内验证。</p>
+        <aside class="guide-warning"><strong>配置没有重新生成？</strong><span>内置文件只补齐缺失项。想恢复某个示例时，只删除那个示例文件再重载，不需要清空整个 Orryx 目录。</span></aside>
+    </section>
+
+    <nav class="guide-next" aria-label="下一篇指南">
+        <span>接下来</span>
+        <a href="#guides/skill-anatomy">读懂技能配置 →</a>
+    </nav>
+</article>
+
+<article data-guide-id="skill-anatomy" data-title="读懂技能配置" data-summary="理解 Options、Variables、Actions 与五种技能类型" data-group="入门">
+    <header class="guide-header">
+        <p class="doc-breadcrumb">指南 / 入门</p>
+        <h1>读懂技能配置</h1>
+        <p class="guide-lead">一个技能文件可以先按三层阅读：它是什么、它有哪些数值、释放后做什么。</p>
+    </header>
+
+    <section class="guide-section">
+        <h2>最小技能</h2>
+        <pre class="guide-code"><code>Options:
+  Type: "DIRECT"
+  Name: "练习技能"
+  Icon: "练习技能"
+  XMaterial: "PAPER"
+  IsLocked: false
+  MinLevel: 1
+  MaxLevel: 5
+  CastCheckAction: true
+  Variables:
+    MANA: 10
+    COOLDOWN: 20
+    SILENCE: 0
+
+Actions: |-
+  tell inline "释放成功，当前等级 {{ &amp;level }}"</code></pre>
+        <dl class="guide-definitions">
+            <div><dt><code>Options</code></dt><dd>技能类型、名称、图标、等级和施法检查等元数据。</dd></div>
+            <div><dt><code>Variables</code></dt><dd>在施法上下文中可复用的数值。常见的 <code>MANA</code>、<code>COOLDOWN</code>、<code>SILENCE</code> 分别控制消耗、冷却和沉默。</dd></div>
+            <div><dt><code>Actions</code></dt><dd>技能真正执行的 Kether 或 JavaScript 主体。</dd></div>
+        </dl>
+    </section>
+
+    <section class="guide-section">
+        <h2>选择技能类型</h2>
+        <div class="table-wrap"><table class="doc-table guide-table">
+            <thead><tr><th>类型</th><th>适用场景</th><th>额外关注</th></tr></thead>
+            <tbody>
+                <tr><td><code>PASSIVE</code></td><td>由中转站、事件或状态驱动的被动能力</td><td>通常不能使用 cast 命令直接释放</td></tr>
+                <tr><td><code>DIRECT</code></td><td>按下后立刻执行</td><td>最适合从零开始验证脚本</td></tr>
+                <tr><td><code>DIRECT AIM</code></td><td>先选落点，再执行</td><td>配置瞄准半径与指示范围</td></tr>
+                <tr><td><code>PRESSING</code></td><td>蓄力后执行</td><td>配置周期、最大蓄力时间和打断条件</td></tr>
+                <tr><td><code>PRESSING AIM</code></td><td>同时需要蓄力与落点</td><td>组合两类参数，建议最后再做</td></tr>
+            </tbody>
+        </table></div>
+        <p>Orryx 中多数持续时间按 tick 计算，20 tick 约等于 1 秒。示例中的 <code>COOLDOWN: 20</code> 因而约为 1 秒。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>按这个顺序扩展</h2>
+        <ol>
+            <li>先把 <code>Actions</code> 写成一条消息，确认技能可加载。</li>
+            <li>加入一个固定伤害或效果动作。</li>
+            <li>把固定值移到 <code>Variables</code>，再加入等级公式。</li>
+            <li>最后补消耗、冷却、选择器和复杂流程。</li>
+        </ol>
+        <p>遇到陌生动作时，打开左侧“语句”参考。比如 <a class="reference-link" href="#actions" data-reference-section="actions" data-reference-name="tell">tell</a>、<a class="reference-link" href="#actions" data-reference-section="actions" data-reference-name="damage">damage</a> 和 <a class="reference-link" href="#actions" data-reference-section="actions" data-reference-name="sleep">sleep</a> 都能查看实际语法和参数。</p>
+    </section>
+
+    <nav class="guide-next" aria-label="下一篇指南"><span>接下来</span><a href="#guides/kether-basics">Kether 脚本基础 →</a></nav>
+</article>
+
+<article data-guide-id="kether-basics" data-title="Kether 脚本基础" data-summary="从顺序执行、变量、条件、循环到注释规则" data-group="脚本">
+    <header class="guide-header">
+        <p class="doc-breadcrumb">指南 / 脚本</p>
+        <h1>Kether 脚本基础</h1>
+        <p class="guide-lead">Kether 很适合把技能写成一串可读的动作。先掌握值如何流动，再去组合复杂视觉效果。</p>
+    </header>
+
+    <section class="guide-section">
+        <h2>顺序、变量与返回值</h2>
+        <pre class="guide-code"><code># 从技能变量读取伤害
+set amount to lazy *DAMAGE
+tell inline "本次伤害 {{ &amp;amount }}"
+damage &amp;amount false they "@range 3 !@self" source "@self" type MAGIC
+sleep 10</code></pre>
+        <p>动作默认从上到下执行。<code>set</code> 把结果保存到局部变量，后续使用 <code>&amp;amount</code> 读取；<code>lazy *DAMAGE</code> 则从技能变量中延迟求值。某些动作会返回布尔值、数字、实体或容器，具体类型以参考页为准。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>条件与循环</h2>
+        <pre class="guide-code"><code>set targets to container they "@range 5 !@self !@team"
+for target in &amp;targets[list] then {
+  set hp to entity HEALTH they &amp;target
+  if check &amp;hp &gt; 0 then {
+    damage lazy *DAMAGE false they &amp;target source "@self" type MAGIC
+  }
+}</code></pre>
+        <p>花括号包住复合动作。先把目标保存为容器，再循环处理，通常比在每一步重复执行范围选择更容易阅读和调试。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>注释不会破坏行号</h2>
+        <pre class="guide-code"><code># 整行注释
+tell "value#1" # 字符串内的 # 会保留
+tell '#value'</code></pre>
+        <p>只有单双引号外、未转义的 <code>#</code> 才开始注释。Orryx 会保留注释对应的换行，所以运行错误仍能指向原配置中的正确行。普通动作列表会自动包装为 <code>def main</code>；如果首个有效词元已经是完整的 <code>def</code>，则按完整脚本加载。</p>
+    </section>
+
+    <aside class="guide-note"><strong>怎么使用参考页</strong><span>先在指南中理解写法，再到“语句”查看某个动作的精确参数、线程要求和返回类型。参考页负责精确，指南负责把它们串起来。</span></aside>
+    <nav class="guide-next" aria-label="下一篇指南"><span>接下来</span><a href="#guides/targets-context">目标、容器与上下文 →</a></nav>
+</article>
+
+<article data-guide-id="targets-context" data-title="目标、容器与上下文" data-summary="理解 @self、@origin、范围选择、过滤器与 they" data-group="脚本">
+    <header class="guide-header">
+        <p class="doc-breadcrumb">指南 / 脚本</p>
+        <h1>目标、容器与上下文</h1>
+        <p class="guide-lead">很多“技能执行了但没命中”的问题，并不是伤害动作出错，而是选择器没有选到预期对象。</p>
+    </header>
+
+    <section class="guide-section">
+        <h2>先分清施法者和原点</h2>
+        <dl class="guide-definitions">
+            <div><dt><code>@self</code></dt><dd>技能的施法者，常用于伤害来源或排除自己。</dd></div>
+            <div><dt><code>@origin</code></dt><dd>当前脚本上下文的原点。指向技能确认落点后，它通常是后续范围效果最重要的位置。</dd></div>
+            <div><dt><code>they</code></dt><dd>告诉动作“接下来这段表达式是目标”。目标可以是一个实体，也可以是选择器产生的多个实体。</dd></div>
+        </dl>
+    </section>
+
+    <section class="guide-section">
+        <h2>从简单选择器开始</h2>
+        <pre class="guide-code"><code># 原点 8 格内，排除施法者、盔甲架和队友
+"@range 8 !@self !@type ARMOR_STAND !@team"</code></pre>
+        <p>选择器从几何范围开始，后面追加过滤器。调试时每次只加一个过滤条件：先确认范围内能选到实体，再逐步排除自己、实体类型和队友。</p>
+        <p>完整能力分成两个入口：“选择器”列出范围与目标构造，“属性”列出对象可读写的字段。需要复用结果时，把目标转成容器：</p>
+        <pre class="guide-code"><code>set targets to container they "@range 8 !@self !@team"
+for target in &amp;targets[list] then {
+  tell inline "目标: {{ &amp;target }}"
+}</code></pre>
+    </section>
+
+    <section class="guide-section">
+        <h2>指向技能中的原点</h2>
+        <p><code>DIRECT AIM</code> 或 <code>PRESSING AIM</code> 确认后，脚本获得所选位置。以 <code>@origin</code> 创建实体或执行范围选择，效果就会围绕落点发生；使用 <code>@self</code> 则仍围绕玩家。</p>
+        <aside class="guide-warning"><strong>常见误区</strong><span>在落点创建了视觉实体，不代表后续动作会自动改用那个实体的位置。每条需要位置的动作都应明确检查自己的 origin 或 they。</span></aside>
+    </section>
+
+    <nav class="guide-next" aria-label="下一篇指南"><span>接下来</span><a href="#guides/javascript">JavaScript 脚本 →</a></nav>
+</article>
+
+<article data-guide-id="javascript" data-title="JavaScript 脚本" data-summary="使用 Nashorn ES5.1、字段覆盖、外部文件和 Kether 桥接" data-group="脚本">
+    <header class="guide-header">
+        <p class="doc-breadcrumb">指南 / 脚本</p>
+        <h1>JavaScript 脚本</h1>
+        <p class="guide-lead">JavaScript 适合较长的控制逻辑和复用模块；Kether 更适合直接编排 Orryx 动作。两者可以在同一个技能中协作。</p>
+    </header>
+
+    <section class="guide-section">
+        <h2>启用 JavaScript</h2>
+        <pre class="guide-code"><code>Options:
+  Type: "DIRECT"
+  ScriptEngine: "JAVASCRIPT"
+  CastCheckAction: "js: return player != null &amp;&amp; player.isOnline();"
+  Variables:
+    MANA: "js: return 10 + level * 2;"
+    COOLDOWN: "kether: math add [ 10 &amp;level ]"
+
+Actions: |-
+  function main() {
+      player.sendMessage("技能等级: " + skill.level);
+      return true;
+  }</code></pre>
+        <p>脚本由 Nashorn 执行，应按 ES5.1 编写：使用 <code>var</code> 和 <code>function</code>，不要依赖箭头函数、原生 Promise 或 <code>async/await</code>。短字段可用 <code>js:</code> 或 <code>kether:</code> 单独覆盖主引擎。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>拆到外部文件</h2>
+        <pre class="guide-code"><code>Options:
+  Type: "DIRECT"
+  ScriptEngine: "JAVASCRIPT"
+ScriptFile: "skills/fireball.js"</code></pre>
+        <p>相对路径以 <code>plugins/Orryx/scripts/</code> 为根。公共模块可以放到 <code>scripts/libs/</code>，再通过 CommonJS <code>require("libs/math")</code> 引入。</p>
+        <p>常用绑定包括 <code>player</code>、<code>sender</code>、<code>parameter</code>、<code>skill</code>、<code>station</code>、<code>event</code>、<code>vars</code>、<code>server</code>、<code>scheduler</code>、<code>kether</code>、<code>orryx</code> 和 <code>require</code>。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>从 JavaScript 调用 Kether</h2>
+        <pre class="guide-code"><code>function main() {
+    return kether.run('tell "JS -&gt; Kether"');
+}</code></pre>
+        <p>调度任务和循环任务应由 <code>main</code> 返回。这样玩家退出、脚本终止或插件重载时，Orryx 才能正确取消任务生命周期。</p>
+        <aside class="guide-warning"><strong>信任边界</strong><span>JavaScript 不是安全沙箱，它能接触 Bukkit、Orryx 对象和 Java 互操作能力。只加载受信任管理员维护的脚本。</span></aside>
+    </section>
+
+    <nav class="guide-next" aria-label="下一篇指南"><span>接下来</span><a href="#guides/aiming">指向与蓄力技能 →</a></nav>
+</article>
+
+<article data-guide-id="aiming" data-title="指向与蓄力技能" data-summary="配置落点、原生左右键确认和蓄力参数" data-group="技能">
+    <header class="guide-header">
+        <p class="doc-breadcrumb">指南 / 技能</p>
+        <h1>指向与蓄力技能</h1>
+        <p class="guide-lead">指向技能把“按下技能”和“执行脚本”拆成两个阶段：先收集玩家选择的落点，确认后才进入 Actions。</p>
+    </header>
+
+    <section class="guide-section">
+        <h2>直接指向</h2>
+        <pre class="guide-code"><code>Options:
+  Type: "DIRECT AIM"
+  Name: "落点测试"
+  AimRadiusAction: 20
+  AimSizeAction: 8
+
+Actions: |-
+  tell "落点已确认"
+  damage 20 false they "@range 3 !@self !@team" source "@self" type MAGIC</code></pre>
+        <p><code>AimRadiusAction</code> 限制可选落点距离，<code>AimSizeAction</code> 控制指示范围。现代服务端使用原生视线落点：左键确认，右键取消；交互会在瞄准期间被 Orryx 接管。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>蓄力指向</h2>
+        <p><code>PRESSING AIM</code> 还会使用初始尺寸、最大尺寸、最大蓄力 tick、周期动作与打断触发器。建议先让同一份 Actions 在 <code>DIRECT AIM</code> 下工作，再逐项加入蓄力参数。</p>
+        <ol>
+            <li>确认左键能落点、右键能取消。</li>
+            <li>确认 <code>@origin</code> 位于视线落点，而不是玩家脚下。</li>
+            <li>再加入粒子、范围目标和持续循环。</li>
+            <li>最后测试受伤打断、重复施法和超时。</li>
+        </ol>
+    </section>
+
+    <aside class="guide-note"><strong>现成范例</strong><span><code>无尽深渊-AI生成案例.yml</code> 是可直接测试的 <code>DIRECT AIM</code> 技能，包含落点实体、范围吸引、循环伤害和斩杀判断。</span></aside>
+    <nav class="guide-next" aria-label="下一篇指南"><span>接下来</span><a href="#guides/ai-examples">从内置示例继续开发 →</a></nav>
+</article>
+
+<article data-guide-id="ai-examples" data-title="从内置示例继续开发" data-summary="四个技能范例与三份中转站范例分别展示什么" data-group="实践">
+    <header class="guide-header">
+        <p class="doc-breadcrumb">指南 / 实践</p>
+        <h1>从内置示例继续开发</h1>
+        <p class="guide-lead">内置示例不是只用来证明插件启动成功，它们分别展示了不同的技能结构。复制最接近需求的一份，再逐步替换。</p>
+    </header>
+
+    <section class="guide-section">
+        <h2>技能目录里的四条路线</h2>
+        <div class="table-wrap"><table class="doc-table guide-table">
+            <thead><tr><th>文件</th><th>适合学习</th><th>测试方式</th></tr></thead>
+            <tbody>
+                <tr><td><code>JavaScript示例.yml</code></td><td>JS 引擎、短字段覆盖和 <code>main()</code></td><td>直接 cast</td></tr>
+                <tr><td><code>裂焱冲击-AI生成案例.yml</code></td><td>位移、药水效果、路径循环伤害</td><td>直接 cast</td></tr>
+                <tr><td><code>无尽深渊-AI生成案例.yml</code></td><td>指向落点、实体、容器、范围吸引和循环</td><td>cast 后左键确认</td></tr>
+                <tr><td><code>无畏护盾-AI生成案例.yml</code></td><td>被动技能与事件驱动的职责分离</td><td>配合中转站触发</td></tr>
+            </tbody>
+        </table></div>
+        <p>测试直放或指向技能时使用：</p>
+        <pre class="guide-code"><code>/skill cast &lt;玩家名&gt; &lt;技能名&gt; 1 false</code></pre>
+    </section>
+
+    <section class="guide-section">
+        <h2>为什么护盾拆成多份文件</h2>
+        <p>被动技能只描述等级和变量；“多久未受击”“什么时候创建护盾”“受到伤害如何扣除护盾”由中转站监听相应事件。这样每个文件只负责一种触发时机，也便于单独关闭和排错。</p>
+        <p><code>stations/example.yml</code> 默认禁用，避免演示监听器在生产服反复输出。需要启用某个中转站时，明确设置 <code>Options.Enabled: true</code>，然后执行 <code>/or reload</code>。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>安全的改造顺序</h2>
+        <ol>
+            <li>复制文件并先改文件名、<code>Options.Name</code> 和图标。</li>
+            <li>重载并确认新技能能被单独识别。</li>
+            <li>一次只替换一个变量或动作段，每次都进游戏验证。</li>
+            <li>最后再调整伤害、消耗、范围和冷却的平衡数值。</li>
+        </ol>
+    </section>
+
+    <nav class="guide-next" aria-label="下一篇指南"><span>接下来</span><a href="#guides/troubleshooting">调试与排错 →</a></nav>
+</article>
+
+<article data-guide-id="troubleshooting" data-title="调试与排错" data-summary="配置未生成、技能未加载、目标为空和 JS 报错的处理顺序" data-group="运维">
+    <header class="guide-header">
+        <p class="doc-breadcrumb">指南 / 运维</p>
+        <h1>调试与排错</h1>
+        <p class="guide-lead">先确定问题发生在哪一层，再改配置。下面的顺序能避免在动作脚本里追查一个其实由文件加载引起的问题。</p>
+    </header>
+
+    <section class="guide-section">
+        <h2>第一层：文件是否存在</h2>
+        <p>检查 <code>plugins/Orryx/skills/</code> 与 <code>plugins/Orryx/stations/</code>。缺失的内置文件会在启动或重载时补齐，同名文件则不会被覆盖。若只缺某个范例，删除或移动对应同名文件后再执行 <code>/or reload</code>。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>第二层：配置是否加载</h2>
+        <ol>
+            <li>查看重载时控制台最先出现的 YAML 或脚本错误。</li>
+            <li>把 Actions 暂时缩减成一条 <code>tell</code>，确认技能入口正常。</li>
+            <li>检查技能名是否与 cast 命令完全一致。</li>
+            <li>被动技能应检查中转站是否启用，不能只靠 cast 命令判断。</li>
+        </ol>
+    </section>
+
+    <section class="guide-section">
+        <h2>第三层：脚本执行到哪里</h2>
+        <p>在关键步骤之间临时加入 <code>tell</code>，逐段定位中断位置。目标相关问题先移除过滤器，只保留一个范围选择；确认有结果后再逐个加回 <code>!@self</code>、<code>!@team</code> 等条件。</p>
+        <p>JavaScript 问题先运行：</p>
+        <pre class="guide-code"><code>/or script environment</code></pre>
+        <p>然后确认代码是 Nashorn ES5.1 写法，并且包含 <code>function main()</code>。外部文件路径始终相对 <code>plugins/Orryx/scripts/</code>。</p>
+    </section>
+
+    <section class="guide-section">
+        <h2>最小复现模板</h2>
+        <pre class="guide-code"><code>Options:
+  Type: "DIRECT"
+  Name: "排错技能"
+  IsLocked: false
+  MinLevel: 1
+  MaxLevel: 1
+  CastCheckAction: true
+  Variables:
+    MANA: 0
+    COOLDOWN: 0
+    SILENCE: 0
+Actions: |-
+  tell "step-1"
+  sleep 1
+  tell "step-2"</code></pre>
+        <p>把有问题的动作逐段移入这个模板。最小版本能工作时，问题通常就在刚加入的那一段或它依赖的上下文中。</p>
+    </section>
+
+    <nav class="guide-next" aria-label="参考文档"><span>继续查阅</span><a href="#actions">打开完整语句参考 →</a></nav>
+</article>

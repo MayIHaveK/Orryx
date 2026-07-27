@@ -119,7 +119,8 @@ tasks.register<RunServer>("generateKetherDocs") {
             bundle.resolve("checksums.json"),
             siteDirectory.resolve("index.html"),
             siteDirectory.resolve("site.css"),
-            siteDirectory.resolve("site.js")
+            siteDirectory.resolve("site.js"),
+            siteDirectory.resolve("guides.html")
         )
         requiredFiles.forEach { file ->
             check(file.isFile && file.length() > 0L) {

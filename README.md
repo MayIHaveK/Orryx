@@ -602,6 +602,7 @@ node scripts/validate-kether-docs.mjs build/generated-docs
 
 ## 文档资源
 
+- [Orryx 在线文档](https://mayihavek.github.io/Orryx/) — 连续阅读的入门、脚本、技能与排错指南，以及完整可搜索参考
 - [飞书 Wiki](https://o0vvjwgpeju.feishu.cn/wiki/Syzzw7aQwixJ4YkXoOAcyYkfnOg) — 完整使用文档
 - [Kether 最新文档](https://mayihavek.github.io/Orryx/kether/latest.md) — 由插件运行时注册数据自动生成
 - [Kether Registry v4](https://mayihavek.github.io/Orryx/kether/kether-registry.json) — 完整类型、动作、选择器、触发器与属性注册表
