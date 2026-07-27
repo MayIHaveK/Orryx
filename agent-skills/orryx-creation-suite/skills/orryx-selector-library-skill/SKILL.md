@@ -49,6 +49,8 @@ provenance:
 - team、pvp、health、limit、random、sort、offset 等过滤或变换；
 - `@their` 等上下文切换必须说明 source/target 语义。
 
+`team` 始终注册。安装 DungeonPlus 时它使用当前在线队员；未安装时队伍为空，`!@team` 等价于不移除目标，`@team` 返回空目标。不要把未安装 DungeonPlus 时的 `!@team` 当作配置错误。
+
 过滤器要放在几何目标之后。需要敌对实体时通常同时排除 self、盔甲架和队友，并明确 PVP 规则。
 
 ## selectors.yml 预设

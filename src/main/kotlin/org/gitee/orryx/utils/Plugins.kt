@@ -2,6 +2,7 @@ package org.gitee.orryx.utils
 
 import org.bukkit.Bukkit
 import org.gitee.orryx.compat.CompatGuard
+import org.gitee.orryx.compat.dungeonplus.DungeonPlusTeamHook
 import taboolib.common.platform.function.console
 import taboolib.module.lang.sendLang
 
@@ -56,7 +57,9 @@ val PlaceholderAPIPlugin = Plugin("PlaceholderAPI")
 
 val GlowAPIPlugin = Plugin("GlowAPI")
 
-val DungeonPlusPlugin = Plugin("DungeonPlus")
+val DungeonPlusPlugin = Plugin("DungeonPlus") {
+    DungeonPlusTeamHook.install()
+}
 
 val CloudPickPlugin = Plugin("CloudPick")
 
