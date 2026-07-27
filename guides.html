@@ -162,6 +162,7 @@ tell '#value'</code></pre>
         <pre class="guide-code"><code># 原点 8 格内，排除施法者、盔甲架和队友
 "@range 8 !@self !@type ARMOR_STAND !@team"</code></pre>
         <p>选择器从几何范围开始，后面追加过滤器。调试时每次只加一个过滤条件：先确认范围内能选到实体，再逐步排除自己、实体类型和队友。</p>
+        <p><code>team</code> 选择器始终可用。安装 DungeonPlus 时它读取当前在线队员；未安装时队伍按空集合处理，因此 <code>!@team</code> 不移除任何目标，<code>@team</code> 则不会选中目标。</p>
         <p>完整能力分成两个入口：“选择器”列出范围与目标构造，“属性”列出对象可读写的字段。需要复用结果时，把目标转成容器：</p>
         <pre class="guide-code"><code>set targets to container they "@range 8 !@self !@team"
 for target in &amp;targets[list] then {
