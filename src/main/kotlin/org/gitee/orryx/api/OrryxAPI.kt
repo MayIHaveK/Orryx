@@ -12,6 +12,31 @@ import kotlin.time.Duration.Companion.seconds
 
 @RuntimeDependencies(
     RuntimeDependency(
+        "!org.ow2.asm:asm:7.3.1",
+        test = "!org.objectweb.asm.ClassReader",
+        transitive = false
+    ),
+    RuntimeDependency(
+        "!org.ow2.asm:asm-commons:7.3.1",
+        test = "!org.objectweb.asm.commons.Remapper",
+        transitive = false
+    ),
+    RuntimeDependency(
+        "!org.ow2.asm:asm-tree:7.3.1",
+        test = "!org.objectweb.asm.tree.ClassNode",
+        transitive = false
+    ),
+    RuntimeDependency(
+        "!org.ow2.asm:asm-analysis:7.3.1",
+        test = "!org.objectweb.asm.tree.analysis.Analyzer",
+        transitive = false
+    ),
+    RuntimeDependency(
+        "!org.ow2.asm:asm-util:7.3.1",
+        test = "!org.objectweb.asm.util.Printer",
+        transitive = false
+    ),
+    RuntimeDependency(
         "!com.github.ben-manes.caffeine:caffeine:2.9.3",
         test = "!org.gitee.orryx.caffeine.cache.Caffeine",
         relocate = ["!com.github.benmanes.caffeine", "!org.gitee.orryx.caffeine"],

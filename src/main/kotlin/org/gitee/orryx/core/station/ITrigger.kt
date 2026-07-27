@@ -17,6 +17,15 @@ interface ITrigger<E> {
 
     val clazz: Class<E>
 
+    fun createScriptVariables(event: E, map: Map<String, Any?>): Map<String, Any?> {
+        val variables = HashMap(map)
+        variables["event"] = event
+        if (event is Cancellable) {
+            variables["isCancelled"] = event.isCancelled
+        }
+        return variables
+    }
+
     /**
      * 当开始运行脚本时注入
      * @param context 执行的脚本上下文
@@ -24,11 +33,7 @@ interface ITrigger<E> {
      * @param map 传入的特殊参数
      * */
     fun onStart(context: ScriptContext, event: E, map: Map<String, Any?>) {
-        context["event"] = event
-        context.extend(map)
-        if (event is Cancellable) {
-            context["isCancelled"] = event.isCancelled
-        }
+        context.extend(createScriptVariables(event, map))
     }
 
     /**

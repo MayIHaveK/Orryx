@@ -2,9 +2,11 @@ package org.gitee.orryx.core.kether.parameter
 
 import org.bukkit.Location
 import org.bukkit.entity.Player
-import org.gitee.orryx.core.kether.ScriptManager
+import org.gitee.orryx.core.script.OrryxScriptRuntime
+import org.gitee.orryx.core.script.ScriptInvocation
 import org.gitee.orryx.core.station.stations.IStation
 import org.gitee.orryx.core.station.stations.StationLoaderManager
+import org.gitee.orryx.core.station.stations.orryxScriptLanguage
 import org.gitee.orryx.core.targets.ITargetLocation
 import org.gitee.orryx.utils.toTarget
 import taboolib.common.platform.ProxyCommandSender
@@ -27,7 +29,15 @@ class StationParameter<E>(val stationLoader: String, val sender: ProxyCommandSen
 
     override fun getVariable(key: String, lazy: Boolean): Any? {
         fun getAndSetValue(): Any? {
-            val value = getStation().variables[key]?.let { ScriptManager.runScript(sender, this, it).orNull() }
+            val station = getStation()
+            val value = station.variables[key]?.let { action ->
+                OrryxScriptRuntime.execute(
+                    "${station.key}@variable:$key",
+                    action,
+                    station.orryxScriptLanguage,
+                    ScriptInvocation(sender, this, event = event),
+                ).future.orNull()
+            }
             if (value == null) {
                 warning("未找到中转站 $stationLoader 的变量 $key")
                 return null

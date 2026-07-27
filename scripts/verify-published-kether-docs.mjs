@@ -2,7 +2,8 @@ import { createHash } from "node:crypto"
 
 const channel = process.argv[2] ?? "snapshot"
 const expectedReleaseId = process.argv[3]
-const base = "https://zhibeigg.github.io/Orryx/kether"
+const pagesOrigin = "https://mayihavek.github.io"
+const base = `${pagesOrigin}/Orryx/kether`
 
 if (!expectedReleaseId) throw new Error("Expected releaseId argument is required")
 if (!new Set(["stable", "snapshot"]).has(channel)) throw new Error(`Invalid channel: ${channel}`)
@@ -28,7 +29,7 @@ async function verify() {
   if (typeof pointer.releaseManifest !== "string" || !pointer.releaseManifest.startsWith("/Orryx/kether/")) {
     throw new Error("unsafe releaseManifest path")
   }
-  const manifestUrl = new URL(pointer.releaseManifest, "https://zhibeigg.github.io").toString()
+  const manifestUrl = new URL(pointer.releaseManifest, pagesOrigin).toString()
   const manifest = JSON.parse((await fetchBytes(`${manifestUrl}?verify=${Date.now()}`)).toString("utf8"))
   if (manifest.releaseId !== expectedReleaseId || manifest.plugin?.commit !== pointer.commit) {
     throw new Error("release manifest identity mismatch")

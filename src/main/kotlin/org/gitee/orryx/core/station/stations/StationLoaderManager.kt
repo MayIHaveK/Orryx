@@ -1,20 +1,23 @@
 package org.gitee.orryx.core.station.stations
 
 import kotlinx.coroutines.launch
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.Cancellable
-import org.gitee.orryx.api.OrryxAPI
 import org.gitee.orryx.api.OrryxAPI.Companion.pluginScope
 import org.gitee.orryx.core.common.timer.StationTimer
 import org.gitee.orryx.core.kether.PlayerRunningSpace
 import org.gitee.orryx.core.kether.ScriptManager
 import org.gitee.orryx.core.kether.parameter.StationParameter
 import org.gitee.orryx.core.reload.Reload
+import org.gitee.orryx.core.script.KetherCompiledScript
+import org.gitee.orryx.core.script.OrryxCompiledScript
+import org.gitee.orryx.core.script.OrryxScriptRuntime
+import org.gitee.orryx.core.script.ScriptInvocation
 import org.gitee.orryx.core.station.TriggerManager
 import org.gitee.orryx.utils.consoleMessage
 import org.gitee.orryx.utils.files
-import org.gitee.orryx.utils.getBytes
-import org.gitee.orryx.utils.orryxEnvironmentNamespaces
+import org.gitee.orryx.utils.minecraftAsync
 import taboolib.common.LifeCycle
 import taboolib.common.platform.Awake
 import taboolib.common.platform.ProxyCommandSender
@@ -25,9 +28,7 @@ import taboolib.common.platform.function.unregisterListener
 import taboolib.common.platform.function.warning
 import taboolib.common.util.unsafeLazy
 import taboolib.module.configuration.Configuration
-import taboolib.module.kether.Script
 import taboolib.module.kether.ScriptContext
-import taboolib.module.kether.ScriptService
 
 object StationLoaderManager {
 
@@ -50,6 +51,9 @@ object StationLoaderManager {
         stationMap.clear()
         files("stations", "example.yml") { file ->
             val configuration = Configuration.loadFromFile(file)
+            val options = configuration.getConfigurationSection("Options")
+            val enabledByDefault = !file.nameWithoutExtension.equals("example", ignoreCase = true)
+            if (options?.getBoolean("Enabled", enabledByDefault) == false) return@files
             val station = StationLoader(file.nameWithoutExtension, configuration)
             stationMap[station.key] = station
         }
@@ -58,9 +62,9 @@ object StationLoaderManager {
         consoleMessage("&e┣&7Stations loaded &e${stationMap.size} &a√")
     }
 
-    internal fun loadScript(station: StationLoader): Script? {
+    internal fun loadScript(station: StationLoader): OrryxCompiledScript? {
         return try {
-            OrryxAPI.ketherScriptLoader.load(ScriptService, station.key, getBytes(station.actions), orryxEnvironmentNamespaces)
+            OrryxScriptRuntime.compile(station.key, station.actions, station.scriptLanguage)
         } catch (ex: Exception) {
             ex.printStackTrace()
             warning("Station: ${station.configuration.file}")
@@ -105,39 +109,56 @@ object StationLoaderManager {
     }
 
     private fun <E> IStationTrigger<E>.startStation(sender: ProxyCommandSender, station: IStation, map: Map<String, Any?>, event: E, parameter: StationParameter<E>) {
-        lateinit var context: ScriptContext
         val player = sender.castSafely<Player>()
         fun run() {
-            val playerRunningSpace =
-                if (player != null) {
-                    ScriptManager.runningStationScriptsMap.getOrPut(player.uniqueId) { PlayerRunningSpace(player) }
-                } else {
-                    null
-                }
-
-            ScriptManager.runScript(sender, parameter, station.script ?: error("请修复中转站${station.key}的脚本配置")) {
-                context = this
-                onStart(this, event, map)
-                playerRunningSpace?.invoke(context, station.key)
-            }.whenComplete { _, scriptFailure ->
-                var failure = scriptFailure
-                try {
-                    onEnd(context, event, map)
-                } catch (throwable: Throwable) {
-                    if (failure == null) failure = throwable else if (failure !== throwable) failure?.addSuppressed(throwable)
-                } finally {
+            val playerRunningSpace = player?.let {
+                ScriptManager.runningStationScriptsMap.getOrPut(it.uniqueId) { PlayerRunningSpace(it) }
+            }
+            val script = station.orryxCompiledScript ?: error("请修复中转站${station.key}的脚本配置")
+            if (script is KetherCompiledScript) {
+                lateinit var context: ScriptContext
+                val execution = OrryxScriptRuntime.execute(
+                    script,
+                    ScriptInvocation(sender, parameter, map, event) {
+                        context = this
+                        onStart(this, event, map)
+                        playerRunningSpace?.invoke(context, station.key)
+                    },
+                )
+                execution.future.whenComplete { _, scriptFailure ->
+                    var failure = scriptFailure
                     try {
-                        playerRunningSpace?.release(context, station.key)
+                        onEnd(context, event, map)
                     } catch (throwable: Throwable) {
                         if (failure == null) failure = throwable else if (failure !== throwable) failure?.addSuppressed(throwable)
+                    } finally {
+                        try {
+                            playerRunningSpace?.release(context, station.key)
+                        } catch (throwable: Throwable) {
+                            if (failure == null) failure = throwable else if (failure !== throwable) failure?.addSuppressed(throwable)
+                        }
                     }
+                    failure?.printStackTrace()
                 }
-                failure?.printStackTrace()
+            } else {
+                val variables = createScriptVariables(event, map)
+                val execution = OrryxScriptRuntime.execute(script, ScriptInvocation(sender, parameter, variables, event))
+                playerRunningSpace?.invoke(execution, station.key)
+                execution.future.whenComplete { _, throwable ->
+                    playerRunningSpace?.release(execution, station.key)
+                    throwable?.printStackTrace()
+                }
             }
         }
 
-        if (station.async) {
-            pluginScope.launch { run() }
+        if (station.orryxScriptLanguage == org.gitee.orryx.core.script.ScriptLanguage.JAVASCRIPT) {
+            if (Bukkit.isPrimaryThread()) {
+                run()
+            } else {
+                pluginScope.launch { run() }
+            }
+        } else if (station.async) {
+            pluginScope.launch(kotlinx.coroutines.Dispatchers.minecraftAsync) { run() }
         } else {
             run()
         }

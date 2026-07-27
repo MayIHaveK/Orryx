@@ -4,7 +4,6 @@ import xyz.jpenilla.runpaper.task.RunServer
 
 val publishUsername: String by project
 val publishPassword: String by project
-val build: String by project
 val token: String by project
 
 plugins {
@@ -51,6 +50,11 @@ tasks.register<RunServer>("generateKetherDocs") {
     outputs.upToDateWhen { false }
 
     doFirst {
+        val serverDirectory = ketherDocsServerDirectory.get().asFile.apply { mkdirs() }
+        serverDirectory.resolve("server.properties").writeText(
+            "server-port=0\nonline-mode=false\n",
+            Charsets.UTF_8
+        )
         val outputDirectory = ketherDocsSiteDirectory.get().asFile
         project.delete(outputDirectory)
         val commit = providers.environmentVariable("GITHUB_SHA").orNull
@@ -172,6 +176,7 @@ taboolib {
         install(CommandHelper)
         install(Database)
         install(Kether)
+        install(JavaScript)
         install(Jexl)
         install("database-h2")
         //repoTabooLib = "https://maven.mcwar.cn/releases"
@@ -294,10 +299,6 @@ tasks.test {
     useJUnitPlatform()
 }
 
-tasks.withType<Jar> {
-    destinationDirectory.set(File(build))
-}
-
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -326,7 +327,7 @@ publishing {
             artifact(tasks["kotlinSourcesJar"]) {
                 classifier = "sources"
             }
-            artifact("${build}/${rootProject.name}-${version}-api.jar") {
+            artifact(layout.buildDirectory.file("libs/${rootProject.name}-${version}-api.jar")) {
                 classifier = "api"
             }
             groupId = project.group.toString()
@@ -339,9 +340,9 @@ publishing {
     repositories {
         maven {
             name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/zhibeigg/Orryx")
+            url = uri("https://maven.pkg.github.com/MayIHaveK/Orryx")
             credentials {
-                username = "zhibeigg"
+                username = "MayIHaveK"
                 password = token
             }
         }
@@ -352,7 +353,7 @@ publishing {
             artifact(tasks["kotlinSourcesJar"]) {
                 classifier = "sources"
             }
-            artifact("${build}/${rootProject.name}-${version}-api.jar") {
+            artifact(layout.buildDirectory.file("libs/${rootProject.name}-${version}-api.jar")) {
                 classifier = "api"
             }
             groupId = project.group.toString()
@@ -371,7 +372,7 @@ dokka {
     moduleName.set("Orryx")
 
     dokkaPublications.html {
-        outputDirectory.set(file("${build}/${rootProject.name}-${version}-doc"))
+        outputDirectory.set(layout.buildDirectory.dir("dokka/${rootProject.name}-${version}-doc"))
         suppressObviousFunctions.set(false)
     }
 
@@ -380,7 +381,7 @@ dokka {
             // 配置源代码链接（GitHub）
             sourceLink {
                 localDirectory.set(file("src/main/kotlin"))
-                remoteUrl("https://github.com/zhibeigg/Orryx/tree/master/src/main/kotlin")
+                remoteUrl("https://github.com/MayIHaveK/Orryx/tree/master/src/main/kotlin")
                 remoteLineSuffix.set("#L")
             }
             // 添加外部文档链接（如 JDK）

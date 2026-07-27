@@ -12,6 +12,10 @@ import org.gitee.orryx.core.kether.KetherScript
 import org.gitee.orryx.core.kether.ScriptManager
 import org.gitee.orryx.core.kether.parameter.SkillParameter
 import org.gitee.orryx.core.kether.parameter.SkillTrigger
+import org.gitee.orryx.core.script.KetherCompiledScript
+import org.gitee.orryx.core.script.OrryxCompiledScript
+import org.gitee.orryx.core.script.OrryxScriptRuntime
+import org.gitee.orryx.core.script.ScriptInvocation
 import org.gitee.orryx.core.key.BindKeyLoaderManager
 import org.gitee.orryx.core.key.IBindKey
 import org.gitee.orryx.core.skill.*
@@ -25,7 +29,6 @@ import org.gitee.orryx.module.state.StateManager.statusData
 import org.gitee.orryx.module.state.states.SkillState
 import taboolib.common.platform.function.adaptPlayer
 import taboolib.module.configuration.util.ReloadAwareLazy
-import taboolib.module.kether.extend
 import java.util.concurrent.CompletableFuture
 
 const val DIRECT = "Direct"
@@ -46,15 +49,35 @@ val silence: Boolean by ReloadAwareLazy(Orryx.config) { Orryx.config.getBoolean(
 
 private val pendingSkillCreations = ConcurrentHashMap<String, CompletableFuture<IPlayerSkill?>>()
 
-internal fun SkillParameter.runSkillAction(map: Map<String, Any?> = emptyMap()): CompletableFuture<Any?>? {
-    return SkillLoaderManager.getSkillLoader(skill ?: return CompletableFuture.completedFuture(null))?.let { skill ->
-        skill as ICastSkill
-        val combinedMap = buildTriggerVariables() + map
-        KetherScript(skill.key, skill.script ?: error("请修复技能配置中的错误${skill.key}")).runActions(
-            this,
-            combinedMap
-        )
+private fun SkillParameter.runCompiledSkill(
+    scriptKey: String,
+    compiled: OrryxCompiledScript,
+    map: Map<String, Any?>,
+): CompletableFuture<Any?> {
+    if (compiled is KetherCompiledScript) {
+        return KetherScript(skill ?: scriptKey, compiled.script).runActions(this, map)
     }
+    val execution = OrryxScriptRuntime.execute(
+        compiled,
+        ScriptInvocation(adaptPlayer(player), this, map),
+    )
+    val runningSpace = ScriptManager.runningSkillScriptsMap.getOrPut(player.uniqueId) {
+        org.gitee.orryx.core.kether.PlayerRunningSpace(player)
+    }
+    runningSpace.invoke(execution, scriptKey)
+    execution.future.whenComplete { _, _ -> runningSpace.release(execution, scriptKey) }
+    return execution.future
+}
+
+internal fun SkillParameter.runSkillAction(map: Map<String, Any?> = emptyMap()): CompletableFuture<Any?>? {
+    val castSkill = SkillLoaderManager.getSkillLoader(skill ?: return CompletableFuture.completedFuture(null)) as? ICastSkill
+        ?: return CompletableFuture.completedFuture(null)
+    val combinedMap = buildTriggerVariables() + map
+    return runCompiledSkill(
+        castSkill.key,
+        castSkill.orryxCompiledScript ?: error("请修复技能配置中的错误${castSkill.key}"),
+        combinedMap,
+    )
 }
 
 internal fun SkillParameter.startSkillAction(map: Map<String, Any?> = emptyMap()): CompletableFuture<Unit> {
@@ -65,8 +88,16 @@ internal fun SkillParameter.startSkillAction(map: Map<String, Any?> = emptyMap()
             it.completeExceptionally(IllegalArgumentException("技能 ${loader.key} 不是可释放技能"))
         }
     val combinedMap = buildTriggerVariables() + map
-    return KetherScript(castSkill.key, castSkill.script ?: error("请修复技能配置中的错误${castSkill.key}"))
-        .startActions(this, combinedMap)
+    val compiled = castSkill.orryxCompiledScript ?: error("请修复技能配置中的错误${castSkill.key}")
+    if (compiled is KetherCompiledScript) {
+        return KetherScript(castSkill.key, compiled.script).startActions(this, combinedMap)
+    }
+    val execution = runCompiledSkill(castSkill.key, compiled, combinedMap)
+    return if (execution.isCompletedExceptionally) {
+        execution.thenApply { Unit }
+    } else {
+        CompletableFuture.completedFuture(Unit)
+    }
 }
 
 internal fun SkillParameter.finishConsumption(
@@ -103,45 +134,55 @@ internal fun SkillParameter.runSkillExtendAction(
     extend: String,
     map: Map<String, Any?> = emptyMap()
 ): CompletableFuture<Any?>? {
-    return SkillLoaderManager.getSkillLoader(skill ?: return CompletableFuture.completedFuture(null))?.let { skill ->
-        skill as ICastSkill
-        val combinedMap = buildTriggerVariables() + map
-        KetherScript(
-            skill.key,
-            skill.extendScripts[extend] ?: error("请修复技能配置中的错误${skill.key} extend $extend")
-        ).runExtendActions(this, extend, combinedMap)
-    }
+    val castSkill = SkillLoaderManager.getSkillLoader(skill ?: return CompletableFuture.completedFuture(null)) as? ICastSkill
+        ?: return CompletableFuture.completedFuture(null)
+    val combinedMap = buildTriggerVariables() + map
+    return runCompiledSkill(
+        "${castSkill.key}@$extend",
+        castSkill.orryxCompiledExtendScripts[extend] ?: error("请修复技能配置中的错误${castSkill.key} extend $extend"),
+        combinedMap,
+    )
 }
 
 internal fun IPlayerSkill.runSkillAction(map: Map<String, Any> = emptyMap()) {
-    (skill as? ICastSkill)?.let { skill ->
-        KetherScript(key, skill.script ?: error("请修复技能配置中的错误$key")).runActions(
-            SkillParameter(
-                key,
-                player,
-                level
-            ), map
+    (skill as? ICastSkill)?.let { castSkill ->
+        SkillParameter(key, player, level).runCompiledSkill(
+            key,
+            castSkill.orryxCompiledScript ?: error("请修复技能配置中的错误$key"),
+            map,
         )
     }
 }
 
 internal fun ICastSkill.runSkillAction(player: Player, level: Int, map: Map<String, Any> = emptyMap()) {
-    KetherScript(key, script ?: error("请修复技能配置中的错误$key")).runActions(SkillParameter(key, player, level), map)
+    SkillParameter(key, player, level).runCompiledSkill(
+        key,
+        orryxCompiledScript ?: error("请修复技能配置中的错误$key"),
+        map,
+    )
 }
 
 internal fun IPlayerSkill.runCustomAction(action: String, map: Map<String, Any> = emptyMap()): CompletableFuture<Any?> {
-    return ScriptManager.runScript(adaptPlayer(player), SkillParameter(key, player, level), action) {
-        extend(map)
-    }
+    val parameter = SkillParameter(key, player, level)
+    return OrryxScriptRuntime.execute(
+        "$key@custom:${action.hashCode()}",
+        action,
+        skill.orryxScriptLanguage,
+        ScriptInvocation(adaptPlayer(player), parameter, map),
+    ).future
 }
 
 internal fun SkillParameter.runCustomAction(
     action: String,
     map: Map<String, Any> = emptyMap()
 ): CompletableFuture<Any?> {
-    return ScriptManager.runScript(adaptPlayer(player), this, action) {
-        extend(map)
-    }
+    val language = getSkill()?.orryxScriptLanguage ?: org.gitee.orryx.core.script.ScriptLanguage.KETHER
+    return OrryxScriptRuntime.execute(
+        "${skill ?: "skill"}@custom:${action.hashCode()}",
+        action,
+        language,
+        ScriptInvocation(adaptPlayer(player), this, map),
+    ).future
 }
 
 fun IPlayerSkill.up(): CompletableFuture<SkillLevelResult> {

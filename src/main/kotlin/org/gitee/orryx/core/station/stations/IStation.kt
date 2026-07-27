@@ -1,5 +1,8 @@
 package org.gitee.orryx.core.station.stations
 
+import org.gitee.orryx.core.script.KetherCompiledScript
+import org.gitee.orryx.core.script.OrryxCompiledScript
+import org.gitee.orryx.core.script.ScriptLanguage
 import taboolib.common.platform.event.EventPriority
 import taboolib.module.kether.Script
 
@@ -22,6 +25,9 @@ interface IStation {
 
     val key: String
 
+    val scriptLanguage: ScriptLanguage
+        get() = ScriptLanguage.KETHER
+
     val event: String
 
     val baffleAction: String?
@@ -39,6 +45,9 @@ interface IStation {
     val variables: Map<String, String>
 
     val script: Script?
+
+    val compiledScript: OrryxCompiledScript?
+        get() = script?.let { KetherCompiledScript(key, actions, it) }
 
     var map: Map<String, Any?>
 }

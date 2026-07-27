@@ -1,5 +1,9 @@
 package org.gitee.orryx.core.station.stations
 
+import org.gitee.orryx.core.script.KetherCompiledScript
+import org.gitee.orryx.core.script.OrryxCompiledScript
+import org.gitee.orryx.core.script.ScriptLanguage
+import org.gitee.orryx.core.script.ScriptSources
 import org.gitee.orryx.utils.getMap
 import taboolib.common.platform.event.EventPriority
 import taboolib.common.util.unsafeLazy
@@ -24,9 +28,18 @@ class StationLoader(override val key: String, val configuration: Configuration):
 
     override val async: Boolean = options.getBoolean("Async", false)
 
-    override val actions: String = configuration.getString("Actions") ?: error("中转站${key}位于${configuration.file}未书写Actions")
+    override val scriptLanguage: ScriptLanguage = ScriptLanguage.parse(options.getString("ScriptEngine"))
 
-    override val script: Script? = StationLoaderManager.loadScript(this)
+    override val actions: String = configuration.getString("ScriptFile")
+        ?.takeIf { it.isNotBlank() }
+        ?.let(ScriptSources::readFile)
+        ?: configuration.getString("Actions")
+        ?: error("中转站${key}位于${configuration.file}未书写Actions或ScriptFile")
+
+    override val compiledScript: OrryxCompiledScript? = StationLoaderManager.loadScript(this)
+
+    override val script: Script?
+        get() = (compiledScript as? KetherCompiledScript)?.script
 
     override var map: Map<String, Any?> = emptyMap()
 }

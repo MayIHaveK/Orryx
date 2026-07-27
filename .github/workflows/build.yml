@@ -31,13 +31,14 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build API
-        run: ./gradlew taboolibBuildApi -Pbuild=./build
+        run: ./gradlew taboolibBuildApi
 
       - name: Build
-        run: ./gradlew build -Pbuild=./build
+        run: ./gradlew build
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: Orryx
-          path: build/*.jar
+          path: build/libs/*.jar
+          if-no-files-found: error

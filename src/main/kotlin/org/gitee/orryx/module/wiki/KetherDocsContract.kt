@@ -8,7 +8,7 @@ import java.util.Locale
 internal const val KETHER_DOCS_FORMAT_VERSION = 1
 internal const val KETHER_REGISTRY_VERSION = 4
 internal const val KETHER_ACTIONS_SCHEMA_VERSION = 3
-internal const val KETHER_DOCS_BASE_URL = "https://zhibeigg.github.io/Orryx/kether"
+internal const val KETHER_DOCS_BASE_URL = "https://mayihavek.github.io/Orryx/kether"
 
 data class KetherDocsMetadata(
     val pluginId: String,

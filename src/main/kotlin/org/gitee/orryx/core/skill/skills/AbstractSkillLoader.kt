@@ -3,6 +3,7 @@ package org.gitee.orryx.core.skill.skills
 import org.gitee.orryx.core.skill.Description
 import org.gitee.orryx.core.skill.ISkill
 import org.gitee.orryx.core.skill.Icon
+import org.gitee.orryx.core.script.ScriptLanguage
 import org.gitee.orryx.utils.getMap
 import taboolib.common.util.unsafeLazy
 import taboolib.library.xseries.XMaterial
@@ -14,6 +15,8 @@ abstract class AbstractSkillLoader(key: String, open val configuration: Configur
     protected val options by unsafeLazy { configuration.getConfigurationSection("Options") ?: error("技能${key}位于${configuration.file}未书写Options键") }
 
     override val name: String = (options.getString("Name") ?: key).colored()
+
+    final override val scriptLanguage: ScriptLanguage = ScriptLanguage.parse(options.getString("ScriptEngine"))
 
     override val sort: Int = options.getInt("Sort", 0)
 

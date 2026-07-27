@@ -14,9 +14,7 @@ import org.gitee.orryx.utils.noEvent
 import taboolib.common.OpenResult
 import taboolib.common.platform.ProxyCommandSender
 import taboolib.common.platform.function.adaptPlayer
-import taboolib.module.kether.ScriptContext
 import taboolib.module.kether.deepVars
-import taboolib.module.kether.extend
 
 object PlayerDamagePreTrigger: AbstractPropertyEventTrigger<OrryxDamageEvents.Pre>("Player Damage Pre") {
 
@@ -47,9 +45,9 @@ object PlayerDamagePreTrigger: AbstractPropertyEventTrigger<OrryxDamageEvents.Pr
         return (pipeTask.scriptContext?.sender?.origin == event.attackPlayer())
     }
 
-    override fun onStart(context: ScriptContext, event: OrryxDamageEvents.Pre, map: Map<String, Any?>) {
-        event.context?.let { context.extend(it.rootFrame().deepVars()) }
-        super.onStart(context, event, map)
+    override fun createScriptVariables(event: OrryxDamageEvents.Pre, map: Map<String, Any?>): Map<String, Any?> {
+        val inherited = event.context?.rootFrame()?.deepVars().orEmpty()
+        return inherited + super.createScriptVariables(event, map)
     }
 
     override fun read(instance: OrryxDamageEvents.Pre, key: String): OpenResult {

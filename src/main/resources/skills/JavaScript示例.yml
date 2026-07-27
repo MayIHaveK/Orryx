@@ -1,0 +1,24 @@
+Options:
+  Type: "DIRECT"
+  Name: "JavaScript 示例"
+  ScriptEngine: "JAVASCRIPT"
+  Sort: 999
+  Icon: "JavaScript 示例"
+  XMaterial: "PAPER"
+  Description:
+    - '&f使用 TabooLib JavaScript 模块执行的示例技能'
+    - '&7脚本语法为 Nashorn ES5.1'
+  IsLocked: false
+  MinLevel: 1
+  MaxLevel: 5
+  UpgradePointAction: "js: return 1;"
+  CastCheckAction: "js: return player != null && player.isOnline();"
+  Variables:
+    MANA: "js: return 0;"
+    COOLDOWN: "js: return 20;"
+    SILENCE: "js: return 0;"
+Actions: |-
+  function main() {
+      player.sendMessage("§a[Orryx] JavaScript 技能执行成功，等级: " + skill.level);
+      return true;
+  }

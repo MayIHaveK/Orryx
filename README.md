@@ -6,14 +6,14 @@
 
 **跨时代技能插件，支持实现复杂逻辑，为稳定高效而生**
 
-[![Version](https://img.shields.io/badge/version-2.55.132-blue?style=for-the-badge)](https://github.com/zhibeigg/Orryx/releases)
+[![Version](https://img.shields.io/badge/version-2.56.0-blue?style=for-the-badge)](https://github.com/MayIHaveK/Orryx/releases)
 [![Minecraft](https://img.shields.io/badge/Minecraft-1.12--1.21-green?style=for-the-badge&logo=minecraft)](https://www.minecraft.net/)
 [![Kotlin](https://img.shields.io/badge/Kotlin-2.1.20-purple?style=for-the-badge&logo=kotlin)](https://kotlinlang.org/)
 [![TabooLib](https://img.shields.io/badge/TabooLib-6.2.4-orange?style=for-the-badge)](https://github.com/TabooLib/taboolib)
 
 [![Wiki](https://img.shields.io/badge/Wiki-开始使用-darkred?style=for-the-badge&logo=gitbook)](https://o0vvjwgpeju.feishu.cn/wiki/Syzzw7aQwixJ4YkXoOAcyYkfnOg)
-[![Ask DeepWiki](https://img.shields.io/badge/DeepWiki-Ask_AI-00D4AA?style=for-the-badge)](https://deepwiki.com/zhibeigg/Orryx)
-[![Ask ZRead](https://img.shields.io/badge/ZRead-Ask_AI-00b0aa?style=for-the-badge)](https://zread.ai/zhibeigg/Orryx)
+[![Ask DeepWiki](https://img.shields.io/badge/DeepWiki-Ask_AI-00D4AA?style=for-the-badge)](https://deepwiki.com/MayIHaveK/Orryx)
+[![Ask ZRead](https://img.shields.io/badge/ZRead-Ask_AI-00b0aa?style=for-the-badge)](https://zread.ai/MayIHaveK/Orryx)
 
 </div>
 
@@ -71,7 +71,11 @@
 
 ### 脚本引擎
 
-基于 Kether 脚本引擎，内置 **74 个动作文件**：
+默认使用 Kether 脚本引擎，并可通过 TabooLib JavaScript 模块使用 Nashorn ES5.1。技能和中转站设置 `Options.ScriptEngine: JAVASCRIPT` 后可直接编写 JS，短字段支持 `js:` / `kether:` 覆盖，复杂脚本可放在 `plugins/Orryx/scripts/` 并通过 `ScriptFile` 引用。
+
+首次启动或重载时，缺失的内置配置会逐个补齐，不会覆盖管理员已经修改的同名文件。`plugins/Orryx/skills/JavaScript示例.yml` 会默认释放，可使用 `/skill cast <玩家> JavaScript示例 1 false` 直接验证 JS 环境。`plugins/Orryx/stations/example.yml` 仅供阅读，默认 `Enabled: false`；旧版本已释放但没有 `Enabled` 的同名示例也默认禁用，避免监听聊天并反复输出测试值。
+
+Kether 内置 **74 个动作文件**：
 
 - 基础：延迟、同步、条件判断、流程控制
 - 技能：冷却管理、法力/精力操作、伤害计算
@@ -106,7 +110,9 @@ Orryx 会从运行时完整注册表生成版本化 Kether 文档包：
 - v4 提供完整类型图、assignability、raw/Kether 可填充提示、结构化 aliases、grammar/variants、线程/上下文与 Trigger 事件字段；实体类型、药水效果、声音和材质等有限值输入会发布可搜索 `options` 目录。
 - 现有 `manifest.json`、`actions-schema.json` 与 `latest.md` 继续作为兼容入口。
 
-在线文档：`https://zhibeigg.github.io/Orryx/`
+在线文档：`https://mayihavek.github.io/Orryx/`
+
+GitHub Pages 由 `Publish GitHub Pages Docs` 工作流自动部署：push 到 `master` 更新 snapshot 文档，推送与 `gradle.properties` 版本一致的 `vA.B.C` Tag 更新 stable 文档；Pull Request 仅生成和校验，不会发布。完整发布合同见 [`docs/Kether-Docs-Publishing.md`](docs/Kether-Docs-Publishing.md)。
 
 发布协议与本地验证命令见 [`docs/Kether-Docs-Publishing.md`](docs/Kether-Docs-Publishing.md)。
 
@@ -391,10 +397,11 @@ Editor:
 
 ### 安装
 
-1. 下载 [最新版本](https://github.com/zhibeigg/Orryx/releases)
+1. 下载 [最新版本](https://github.com/MayIHaveK/Orryx/releases)
 2. 放入服务器 `plugins` 目录
 3. 重启服务器
 4. 编辑 `plugins/Orryx/config.yml`
+5. 执行 `/or script environment`，确认 JavaScript 引擎状态为“可用”
 
 ### 依赖
 
@@ -462,6 +469,8 @@ plugins/Orryx/
 ├── skills/                # 技能定义
 ├── jobs/                  # 职业定义
 ├── stations/              # 中转站定义
+│   └── example.yml        # 默认禁用的中转站示例
+├── scripts/               # 外部 JavaScript 与 CommonJS 模块
 ├── controllers/           # 控制器定义
 ├── experiences/           # 经验算法
 ├── status/                # 状态定义
@@ -562,6 +571,7 @@ Windows PowerShell：
 ```bash
 # 构建发行版本
 ./gradlew build
+# 产物：build/libs/Orryx-<version>.jar
 
 # 生成 API 包（开发用）
 ./gradlew taboolibBuildApi -PDeleteCode
@@ -571,6 +581,9 @@ Windows PowerShell：
 
 # 启动临时 Paper 并生成最新 Kether 文档、Schema 与 Manifest
 ./gradlew generateKetherDocs
+
+# 本地校验 GitHub Pages 候选目录
+node scripts/validate-kether-docs.mjs build/generated-docs
 ```
 
 ---
@@ -590,12 +603,12 @@ Windows PowerShell：
 ## 文档资源
 
 - [飞书 Wiki](https://o0vvjwgpeju.feishu.cn/wiki/Syzzw7aQwixJ4YkXoOAcyYkfnOg) — 完整使用文档
-- [Kether 最新文档](https://zhibeigg.github.io/Orryx/kether/latest.md) — 由插件运行时注册数据自动生成
-- [Kether Registry v4](https://zhibeigg.github.io/Orryx/kether/kether-registry.json) — 完整类型、动作、选择器、触发器与属性注册表
-- [Kether 编辑器 Schema v3](https://zhibeigg.github.io/Orryx/kether/actions-schema.json) — 旧消费者兼容入口
-- [Kether 文档 Manifest](https://zhibeigg.github.io/Orryx/kether/manifest.json) — 当前版本、版本化文档与下载地址
-- [DeepWiki AI](https://deepwiki.com/zhibeigg/Orryx) — AI 问答助手
-- [ZRead AI](https://zread.ai/zhibeigg/Orryx) — AI 问答助手
+- [Kether 最新文档](https://mayihavek.github.io/Orryx/kether/latest.md) — 由插件运行时注册数据自动生成
+- [Kether Registry v4](https://mayihavek.github.io/Orryx/kether/kether-registry.json) — 完整类型、动作、选择器、触发器与属性注册表
+- [Kether 编辑器 Schema v3](https://mayihavek.github.io/Orryx/kether/actions-schema.json) — 旧消费者兼容入口
+- [Kether 文档 Manifest](https://mayihavek.github.io/Orryx/kether/manifest.json) — 当前版本、版本化文档与下载地址
+- [DeepWiki AI](https://deepwiki.com/MayIHaveK/Orryx) — AI 问答助手
+- [ZRead AI](https://zread.ai/MayIHaveK/Orryx) — AI 问答助手
 - [API 文档](docs/API.md) — 开发者 API 参考
 - [客户端协议文档](docs/Plugin-Integration.md) — OrryxMod 客户端协议
 - [客户端引擎集成](docs/Client-Engine-Integration.md) — DragonCore/GermPlugin/ArcartX 集成

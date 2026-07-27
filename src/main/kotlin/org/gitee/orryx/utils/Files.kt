@@ -12,8 +12,8 @@ import java.io.File
 
 internal inline fun files(path: String, vararg defs: String, callback: (File) -> Unit) {
     val file = File(getDataFolder(), path)
-    if (!file.exists()) {
-        defs.forEach {
+    defs.forEach {
+        if (!File(file, it).exists()) {
             releaseResourceFile("$path/$it", false)
         }
     }

@@ -5,6 +5,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.gitee.orryx.api.OrryxAPI.Companion.ketherScriptLoader
 import org.gitee.orryx.core.kether.parameter.IParameter
 import org.gitee.orryx.core.reload.Reload
+import org.gitee.orryx.core.script.OrryxScriptRuntime
 import org.gitee.orryx.core.common.NanoId
 import org.gitee.orryx.utils.PARAMETER
 import org.gitee.orryx.utils.getBytes
@@ -70,8 +71,13 @@ object ScriptManager {
     @Awake(LifeCycle.DISABLE)
     private fun onDisable() {
         acceptingResources.set(false)
+        terminateAllSkills()
+        terminateAllStation()
+        runningSkillScriptsMap.clear()
+        runningStationScriptsMap.clear()
         activeResourceScopes.values.toSet().forEach(ResourceScope::close)
         activeResourceScopes.clear()
+        OrryxScriptRuntime.reset()
     }
 
     internal fun cleanUp(id: String) {
@@ -166,6 +172,7 @@ object ScriptManager {
         terminateAllSkills()
         terminateAllStation()
         scriptCache.invalidateAll()
+        OrryxScriptRuntime.reset()
     }
 
     fun runScript(sender: ProxyCommandSender, parameter: IParameter, script: Script, context: (ScriptContext.() -> Unit)? = null): CompletableFuture<Any?> {

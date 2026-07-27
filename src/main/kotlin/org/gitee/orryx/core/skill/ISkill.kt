@@ -1,5 +1,7 @@
 package org.gitee.orryx.core.skill
 
+import org.gitee.orryx.core.script.ScriptLanguage
+
 /**
  * 技能配置接口。
  *
@@ -24,6 +26,9 @@ package org.gitee.orryx.core.skill
 interface ISkill {
 
     val key: String
+
+    val scriptLanguage: ScriptLanguage
+        get() = ScriptLanguage.KETHER
 
     val name: String
 

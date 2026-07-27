@@ -1,6 +1,7 @@
 package org.gitee.orryx.command
 
 import org.gitee.orryx.core.kether.ScriptManager
+import org.gitee.orryx.core.script.javascript.JavaScriptEnvironment
 import org.gitee.orryx.core.skill.SkillLoaderManager
 import org.gitee.orryx.core.station.stations.StationLoaderManager
 import org.gitee.orryx.utils.bukkitPlayer
@@ -11,6 +12,14 @@ import taboolib.common.platform.command.subCommand
 import taboolib.common.platform.command.suggest
 
 object OrryxScriptCommand {
+
+    @CommandBody
+    val environment = subCommand {
+        exec<ProxyCommandSender> {
+            JavaScriptEnvironment.initialize()
+            sender.sendMessage("JavaScript 环境: ${JavaScriptEnvironment.describe()}")
+        }
+    }
 
     @CommandBody
     val terminateAllSkill = subCommand {

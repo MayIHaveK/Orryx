@@ -1,9 +1,9 @@
 package org.gitee.orryx.core.skill.skills
 
+import org.gitee.orryx.core.script.OrryxCompiledScript
 import org.gitee.orryx.core.skill.SkillLoaderManager
 import org.gitee.orryx.utils.PRESSING
 import taboolib.module.configuration.Configuration
-import taboolib.module.kether.Script
 
 class PressingSkill(
     key: String,
@@ -20,7 +20,7 @@ class PressingSkill(
 
     override val maxPressTickAction: String = options.getString("MaxPressTickAction", "20")!!
 
-    override val script: Script? = SkillLoaderManager.loadScript(this)
+    override val compiledScript: OrryxCompiledScript? = SkillLoaderManager.loadScript(this)
 
-    override val extendScripts: Map<String, Script?> = SkillLoaderManager.loadExtendScript(this)
+    override val compiledExtendScripts: Map<String, OrryxCompiledScript?> = SkillLoaderManager.loadExtendScript(this)
 }

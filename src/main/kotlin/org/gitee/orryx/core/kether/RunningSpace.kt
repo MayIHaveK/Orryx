@@ -1,38 +1,44 @@
 package org.gitee.orryx.core.kether
 
 import org.gitee.orryx.api.events.OrryxScriptTerminateEvent
+import org.gitee.orryx.core.script.KetherRunningScriptExecution
+import org.gitee.orryx.core.script.RunningScriptExecution
 import taboolib.module.kether.ScriptContext
 import java.util.concurrent.ConcurrentHashMap
 
 class RunningSpace(val tag: String) {
 
-    private val runningScriptContexts by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ConcurrentHashMap<String, ScriptContext>() }
+    private val runningExecutions by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { ConcurrentHashMap<String, RunningScriptExecution>() }
 
     fun addScriptContext(scriptContext: ScriptContext) {
-        runningScriptContexts[scriptContext.id] = scriptContext
+        addExecution(KetherRunningScriptExecution(scriptContext))
+    }
+
+    fun addExecution(execution: RunningScriptExecution) {
+        runningExecutions[execution.id] = execution
     }
 
     fun removeScriptContext(scriptContext: ScriptContext) {
-        runningScriptContexts.remove(scriptContext.id)
+        runningExecutions.remove(scriptContext.id)
+    }
+
+    fun removeExecution(execution: RunningScriptExecution) {
+        runningExecutions.remove(execution.id, execution)
     }
 
     fun isEmpty(): Boolean {
-        return runningScriptContexts.isEmpty()
+        return runningExecutions.isEmpty()
     }
 
     fun terminate() {
         if (OrryxScriptTerminateEvent.Pre(this).call()) {
-            runningScriptContexts.forEach {
-                // 此处顺序不可变
-                ScriptManager.cleanUp(it.value)
-                it.value.terminate()
-            }
+            runningExecutions.values.toList().forEach(RunningScriptExecution::terminate)
             OrryxScriptTerminateEvent.Post(this).call()
-            runningScriptContexts.clear()
+            runningExecutions.clear()
         }
     }
 
     fun foreach(func: ScriptContext.() -> Unit) {
-        runningScriptContexts.forEach { it.value.func() }
+        runningExecutions.values.forEach { execution -> execution.ketherContext()?.func() }
     }
 }

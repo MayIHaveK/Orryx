@@ -1,5 +1,7 @@
 # 中转站设置
 Options:
+  # 示例默认不注册，复制并改名或设置为 true 后启用
+  Enabled: false
   # 监听的事件
   Event: "Async Player Chat"
   # 冷却间隔 Tick

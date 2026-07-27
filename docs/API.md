@@ -1,5 +1,7 @@
 # Orryx API
 
+> 2.56.0：接入 TabooLib JavaScript 模块，技能与中转站可通过 `Options.ScriptEngine: JAVASCRIPT` 使用 Nashorn ES5.1；支持 `js:/kether:` 字段覆盖、外部 `ScriptFile`、CommonJS `require`、JS 调用 Kether、调度任务自动清理与环境诊断。
+>
 > 2.55.130：Kether Registry 为实体类型、药水效果、声音与材质等有限值输入发布稳定 `options` 目录；Editor 可据此提供可搜索选择，同时继续允许自定义值与 Raw Kether 片段。
 >
 > 2.54.130：保持已发布 Actions Schema v3 与 Registry v4 JSON Schema 字节不可变；Action 简介非空继续由生成器、Publisher 与产物校验强制执行，修复 stable 历史合并拒绝覆盖旧合同的问题。
@@ -48,7 +50,7 @@ Orryx 是一个跨时代的 Minecraft 技能插件，基于 Kotlin 2.1.20 和 Ta
 - 5 种技能类型（被动、直接、指向、蓄力、蓄力指向）
 - 完整的职业系统
 - 80+ 触发器
-- Kether + Kotlin 双脚本引擎
+- Kether + JavaScript 双脚本引擎
 - 8 种碰撞箱类型
 - 30+ 事件 API
 
@@ -1103,29 +1105,101 @@ Actions: |-
 - LF 与 CRLF 均受支持，纯注释行不会被删除，从而保持后续源码行号。
 - 注释移除后，首个非空内容为完整 `def` 词元时按完整脚本加载；否则自动包装为 `def main`。因此文件开头可以先写注释再声明多个 `def` 函数。
 
-### 7.2 Kotlin 脚本（热重载）
+### 7.2 JavaScript 脚本
 
-Orryx 支持 Kotlin 脚本（.kts 文件），具有热重载能力。
+Orryx 通过 TabooLib JavaScript 模块加载 Nashorn。Java 8 使用 JDK 内置环境，新版 JDK 使用 TabooLib 管理的独立 Nashorn 运行依赖。脚本语法按 ES5.1 编写，使用 `var` 和 `function`，不要依赖原生 Promise、箭头函数或 `async/await`。
 
-**脚本位置：** `plugins/Orryx/kts/`
+插件会在每次加载配置时补齐缺失的内置示例，但不会覆盖已有文件：
 
-**脚本示例：**
-```kotlin
-// plugins/Orryx/kts/my_script.kts
+- `plugins/Orryx/skills/JavaScript示例.yml`：默认启用，可执行 `/skill cast <玩家> JavaScript示例 1 false` 测试。
+- `plugins/Orryx/stations/example.yml`：默认禁用；设置 `Options.Enabled: true` 后才会注册。旧版没有 `Enabled` 字段的同名示例同样按禁用处理，避免它监听聊天并输出示例变量。
 
-import org.bukkit.entity.Player
-import org.gitee.orryx.api.Orryx
+可先运行 `/or script environment` 查看引擎名称、版本和探针结果，再运行 `/or reload` 重新加载技能及中转站配置。
 
-// 脚本入口
-fun execute(player: Player) {
-    val api = Orryx.api()
+**技能内联脚本：**
 
-    // 使用 API
-    api.skillAPI.castSkill(player, "fireball", 1)
+```yaml
+Options:
+  Type: "DIRECT"
+  ScriptEngine: "JAVASCRIPT"
+  CastCheckAction: "js: return player != null && player.isOnline();"
+  Variables:
+    MANA: "js: return 10 + level * 2;"
+    COOLDOWN: "kether: math add [ 10 &level ]"
 
-    player.sendMessage("脚本执行完成")
+Actions: |-
+  function main() {
+      player.sendMessage("技能等级: " + skill.level);
+      return true;
+  }
+```
+
+未声明 `function main()` 的短脚本会自动包装为 `main()` 函数体。原有配置默认仍使用 Kether。
+
+**外部脚本：**
+
+```yaml
+Options:
+  ScriptEngine: "JAVASCRIPT"
+ScriptFile: "skills/fireball.js"
+```
+
+相对路径以 `plugins/Orryx/scripts/` 为根目录。模块可放在 `scripts/libs/` 并使用 CommonJS：
+
+```javascript
+var math = require("libs/math");
+
+function main() {
+    return math.scale(10, skill.level);
 }
 ```
+
+主要 Bindings：`player`、`sender`、`parameter`、`skill`、`station`、`event`、`vars`、`server`、`scheduler`、`kether`、`orryx`、`require`、`print`。
+
+> JavaScript 环境不是安全沙箱，会暴露 Bukkit/Orryx 对象与 Nashorn Java 互操作能力，只能加载受信任管理员维护的脚本。JS 函数对象不得跨线程执行，因此 `scheduler.async(...)` 会拒绝执行；异步 I/O 应由 Java/Kotlin 服务完成，再通过 `scheduler.run(...)` 返回 Bukkit 主线程。
+
+JavaScript 中转站始终在 Bukkit 主线程执行；其 `Options.Async` 配置不会将 JS 函数或 Bukkit 对象移动到异步线程。
+
+中转站通用开关：
+
+```yaml
+Options:
+  Enabled: false
+```
+
+文件名为 `example.yml` 且未显式配置 `Enabled` 时也默认禁用；其他中转站默认启用。
+
+```javascript
+function main() {
+    // 复用 Orryx 现有 Kether 动作，返回 CompletableFuture
+    return kether.run('tell "JS -> Kether"');
+}
+```
+
+调度任务会绑定脚本执行生命周期，玩家退出、脚本终止或插件重载时自动取消：
+
+```javascript
+function main() {
+    return scheduler.later(function() {
+        player.sendMessage("20 tick 后执行");
+        return true;
+    }, 20);
+}
+```
+
+循环任务同样必须由 `main` 返回。返回的 `CompletableFuture` 代表循环任务的生命周期，取消 Future 或终止脚本都会停止任务：
+
+```javascript
+function main() {
+    return scheduler.repeat(function() {
+        player.sendMessage("每秒执行一次");
+    }, 0, 20);
+}
+```
+
+`ISkill.scriptLanguage`、`ICastSkill.compiledScript`、`ICastSkill.compiledExtendScripts`、`IStation.scriptLanguage` 和 `IStation.compiledScript` 可供扩展插件以语言无关的方式读取脚本；原有 `script`/`extendScripts` 属性继续表示 Kether 脚本。
+
+使用 `/orryx script environment` 可查看实际引擎、版本和编译执行探针结果。
 
 ### 7.3 脚本执行 API
 
@@ -1284,16 +1358,16 @@ A: 对于可取消的事件，设置 `event.isCancelled = true`。
 
 ### 9.3 更新日志
 
-请参阅项目的 [GitHub Releases](https://github.com/zhibeigg/Orryx/releases) 获取完整的更新日志。
+请参阅项目的 [GitHub Releases](https://github.com/MayIHaveK/Orryx/releases) 获取完整的更新日志。
 
 ---
 
 ## 相关资源
 
 - [飞书 Wiki](https://o0vvjwgpeju.feishu.cn/wiki/Syzzw7aQwixJ4YkXoOAcyYkfnOg) - 完整使用文档
-- [DeepWiki AI](https://deepwiki.com/zhibeigg/Orryx) - AI 问答助手
-- [ZRead AI](https://zread.ai/zhibeigg/Orryx) - AI 问答助手
-- [GitHub 仓库](https://github.com/zhibeigg/Orryx) - 源代码
+- [DeepWiki AI](https://deepwiki.com/MayIHaveK/Orryx) - AI 问答助手
+- [ZRead AI](https://zread.ai/MayIHaveK/Orryx) - AI 问答助手
+- [GitHub 仓库](https://github.com/MayIHaveK/Orryx) - 源代码
 
 ---
 

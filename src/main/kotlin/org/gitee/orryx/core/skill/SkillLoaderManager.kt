@@ -1,8 +1,9 @@
 package org.gitee.orryx.core.skill
 
-import org.gitee.orryx.api.OrryxAPI
 import org.gitee.orryx.api.events.OrryxSkillReloadEvent
 import org.gitee.orryx.core.reload.Reload
+import org.gitee.orryx.core.script.OrryxCompiledScript
+import org.gitee.orryx.core.script.OrryxScriptRuntime
 import org.gitee.orryx.core.skill.skills.*
 import org.gitee.orryx.dao.cache.MemoryCache
 import org.gitee.orryx.module.state.StateManager
@@ -12,8 +13,6 @@ import taboolib.common.platform.Awake
 import taboolib.common.platform.function.warning
 import taboolib.common.util.unsafeLazy
 import taboolib.module.configuration.Configuration
-import taboolib.module.kether.Script
-import taboolib.module.kether.ScriptService
 
 object SkillLoaderManager {
 
@@ -33,7 +32,7 @@ object SkillLoaderManager {
         if (OrryxSkillReloadEvent().call()) {
             skillMap.clear()
             val castSkillMap = hashMapOf<String, ICastSkill>()
-            files("skills", "操翻诸神拳.yml") { file ->
+            files("skills", "操翻诸神拳.yml", "JavaScript示例.yml") { file ->
                 val configuration = Configuration.loadFromFile(file)
                 val type = (configuration.getString("Options.Type") ?: "Direct").uppercase()
                 val skill = when(type) {
@@ -53,23 +52,28 @@ object SkillLoaderManager {
         }
     }
 
-    internal fun loadScript(skill: ICastSkill): Script? {
+    internal fun loadScript(skill: ICastSkill): OrryxCompiledScript? {
         return try {
-            OrryxAPI.ketherScriptLoader.load(ScriptService, skill.key, getBytes(skill.actions), orryxEnvironmentNamespaces)
+            OrryxScriptRuntime.compile(skill.key, skill.actions, skill.orryxScriptLanguage)
         } catch (ex: Exception) {
             warning("Skill: ${skill.key} 主Action加载失败")
-            ex.printKetherErrorMessage()
+            if (skill.orryxScriptLanguage == org.gitee.orryx.core.script.ScriptLanguage.KETHER) {
+                ex.printKetherErrorMessage()
+            } else {
+                ex.printStackTrace()
+            }
             null
         }
     }
 
-    internal fun loadExtendScript(skill: ICastSkill): Map<String, Script?> {
+    internal fun loadExtendScript(skill: ICastSkill): Map<String, OrryxCompiledScript?> {
         return skill.extendActions.mapValues {
             try {
-                OrryxAPI.ketherScriptLoader.load(ScriptService, "${skill.key}@${it.key}", getBytes(it.value), orryxEnvironmentNamespaces)
+                val resolved = org.gitee.orryx.core.script.ScriptLanguage.resolve(it.value, skill.orryxScriptLanguage)
+                OrryxScriptRuntime.compile("${skill.key}@${it.key}", resolved.source, resolved.language)
             } catch (ex: Exception) {
                 warning("Skill: ${skill.key} ExtendAction: ${it.key} 加载失败")
-                ex.printKetherErrorMessage()
+                ex.printStackTrace()
                 null
             }
         }

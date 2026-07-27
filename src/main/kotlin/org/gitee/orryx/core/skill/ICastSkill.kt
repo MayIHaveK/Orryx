@@ -1,5 +1,7 @@
 package org.gitee.orryx.core.skill
 
+import org.gitee.orryx.core.script.KetherCompiledScript
+import org.gitee.orryx.core.script.OrryxCompiledScript
 import taboolib.module.kether.Script
 
 /**
@@ -18,6 +20,14 @@ interface ICastSkill: ISkill {
     val extendActions: Map<String, String>
 
     val castCheckAction: String?
+
+    val compiledScript: OrryxCompiledScript?
+        get() = script?.let { KetherCompiledScript(key, actions, it) }
+
+    val compiledExtendScripts: Map<String, OrryxCompiledScript?>
+        get() = extendScripts.mapValues { (extend, script) ->
+            script?.let { KetherCompiledScript("$key@$extend", extendActions[extend].orEmpty(), it) }
+        }
 
     val script: Script?
 

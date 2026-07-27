@@ -5,8 +5,21 @@ Orryx 从运行时完整注册表生成 Kether 文档，并通过 GitHub Pages �
 ## 发布通道
 
 - `kether/channels/stable.json`：只由 `vA.B.C` Tag 更新，供生产编辑器读取。
-- `kether/channels/snapshot.json`：由 `master` 更新，用于开发验证。
+- `kether/channels/snapshot.json`：每次 push 到 `master` 后自动更新并部署，用于开发验证。
 - Pull Request 只生成和校验候选包，不部署。
+
+## GitHub Pages 自动部署
+
+仓库使用 `.github/workflows/kether-docs.yml` 直接部署 GitHub Pages，不需要手工维护 `gh-pages` 分支：
+
+- push 到 `master`：生成、校验并自动部署 snapshot 文档。
+- push `vA.B.C` Tag：版本必须与 `gradle.properties` 一致，生成并自动部署 stable 文档。
+- Pull Request：只执行生成和完整校验，不获得写权限，也不会部署。
+- Actions 页面手动运行 `Publish GitHub Pages Docs`：可重新发布 snapshot；stable 仍只允许从版本 Tag 发布。
+
+首次使用时，仓库管理员只需确认 `Settings → Pages → Build and deployment → Source` 为 **GitHub Actions**。工作流中的 `configure-pages` 也会尝试自动完成启用；组织策略禁止自动启用时才需要手动设置。
+
+部署地址：`https://mayihavek.github.io/Orryx/`。每次部署完成后，`verify` Job 会从该公网地址重新下载通道指针、Manifest 和全部资产，并核对大小与 SHA-256。
 
 通道指针只包含版本、完整 Git SHA、`releaseId` 和不可变发布清单路径。消费者应优先使用条件请求检查该小文件。
 
@@ -95,7 +108,7 @@ KETHER_DOCS_PREVIOUS_RELEASE_ID=<上一版 releaseId>
 
 ## CI/CD 顺序
 
-1. 解析版本、channel、commit 和 releaseId。
+1. push 到 `master`、版本 Tag 或手动触发工作流，解析版本、channel、commit 和 releaseId。
 2. 获取历史分支中的上一 stable Schema，用于生成结构化差异。
 3. 启动临时 Paper，等待所有 Kether 注册完成并生成候选包。
 4. 校验 JSON、稳定 ID、类型/分类引用、数量、大小预算、bytes 和 SHA-256。
@@ -105,6 +118,8 @@ KETHER_DOCS_PREVIOUS_RELEASE_ID=<上一版 releaseId>
 8. 部署后从公网通道指针开始重新下载所有资产并校验 SHA-256。
 
 Pages artifact 会替换整站，因此 `kether-docs` 分支负责保存历史发布目录。线上切换发生在 Pages deployment；部署失败不会破坏之前的线上 stable。
+
+临时 Paper 使用 `server-port=0` 绑定随机可用端口，不会占用开发服务器常用的 `25565`，任务结束后由 Gradle 负责关闭。
 
 ## 回滚
 
