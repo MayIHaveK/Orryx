@@ -266,6 +266,10 @@ for (const legacy of ["manifest.json", "kether-registry.json", "actions-schema.j
   const info = await stat(join(site, "kether", legacy))
   check(info.isFile() && info.size > 0, `missing legacy compatibility file ${legacy}`)
 }
+for (const asset of ["index.html", "site.css", "site.js"]) {
+  const info = await stat(join(site, asset))
+  check(info.isFile() && info.size > 0, `missing documentation site asset ${asset}`)
+}
 
 console.log(JSON.stringify({
   channel: channel.channel,

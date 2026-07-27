@@ -110,7 +110,7 @@ Orryx 会从运行时完整注册表生成版本化 Kether 文档包：
 - v4 提供完整类型图、assignability、raw/Kether 可填充提示、结构化 aliases、grammar/variants、线程/上下文与 Trigger 事件字段；实体类型、药水效果、声音和材质等有限值输入会发布可搜索 `options` 目录。
 - 现有 `manifest.json`、`actions-schema.json` 与 `latest.md` 继续作为兼容入口。
 
-在线文档：`https://mayihavek.github.io/Orryx/`
+在线文档：<https://mayihavek.github.io/Orryx/>。首页提供语句、选择器、触发器、属性和类型的分类浏览、全文搜索与移动端目录；原始 Markdown、Registry、Schema 和 Manifest 可从页面右上角下载。
 
 GitHub Pages 由 `Publish GitHub Pages Docs` 工作流自动部署：push 到 `master` 更新 snapshot 文档，推送与 `gradle.properties` 版本一致的 `vA.B.C` Tag 更新 stable 文档；Pull Request 仅生成和校验，不会发布。完整发布合同见 [`docs/Kether-Docs-Publishing.md`](docs/Kether-Docs-Publishing.md)。
 

@@ -158,7 +158,7 @@ object KetherDocsPublisher {
         )
 
         writeLegacyCompatibility(ketherDirectory, registryFile, schemaFile, markdownFile, metadata, counts)
-        KetherDocsContract.writeUtf8(File(siteDirectory, "index.html"), generateIndex(metadata))
+        writeSiteAssets(siteDirectory, metadata)
         File(siteDirectory, ".nojekyll").apply {
             parentFile?.mkdirs()
             writeText("", Charsets.UTF_8)
@@ -317,6 +317,8 @@ object KetherDocsPublisher {
     ) {
         require(File(siteDirectory, ".nojekyll").isFile) { "GitHub Pages 标记缺失" }
         require(File(siteDirectory, "index.html").length() > 0L) { "index.html 为空" }
+        require(File(siteDirectory, "site.css").length() > 0L) { "site.css 为空" }
+        require(File(siteDirectory, "site.js").length() > 0L) { "site.js 为空" }
         require(File(siteDirectory, "kether/channels/${metadata.channel}.json").length() in 1..32L * 1024) {
             "channel manifest 为空或超过 32 KiB"
         }
@@ -337,37 +339,21 @@ object KetherDocsPublisher {
         }
     }
 
-    private fun generateIndex(metadata: KetherDocsMetadata): String {
-        val escapedVersion = metadata.version.htmlEscape()
-        val escapedReleaseId = metadata.releaseId.htmlEscape()
-        return """<!doctype html>
-<html lang="zh-CN">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Orryx Kether 文档</title>
-    <style>
-        body { max-width: 840px; margin: 64px auto; padding: 0 24px; font-family: system-ui, sans-serif; line-height: 1.7; color: #1f2937; }
-        h1 { margin-bottom: 8px; }
-        .version { color: #6b7280; }
-        ul { padding-left: 22px; }
-        a { color: #2563eb; }
-        code { padding: 2px 6px; border-radius: 4px; background: #f3f4f6; overflow-wrap: anywhere; }
-    </style>
-</head>
-<body>
-    <h1>Orryx Kether 文档</h1>
-    <p class="version">当前生成版本：<code>$escapedVersion</code></p>
-    <p class="version">发布标识：<code>$escapedReleaseId</code></p>
-    <ul>
-        <li><a href="kether/channels/stable.json">Stable Channel</a></li>
-        <li><a href="kether/channels/snapshot.json">Snapshot Channel</a></li>
-        <li><a href="kether/latest.md">兼容 Markdown 文档</a></li>
-        <li><a href="kether/actions-schema.json">兼容 Actions Schema JSON</a></li>
-        <li><a href="kether/manifest.json">兼容 Manifest</a></li>
-    </ul>
-</body>
-</html>"""
+    private fun writeSiteAssets(siteDirectory: File, metadata: KetherDocsMetadata) {
+        val index = readSiteResource("index.html")
+            .replace("{{VERSION}}", metadata.version.htmlEscape())
+            .replace("{{RELEASE_ID}}", metadata.releaseId.htmlEscape())
+        KetherDocsContract.writeUtf8(File(siteDirectory, "index.html"), index)
+        for (name in listOf("site.css", "site.js")) {
+            KetherDocsContract.writeUtf8(File(siteDirectory, name), readSiteResource(name))
+        }
+    }
+
+    private fun readSiteResource(name: String): String {
+        val path = "kether-docs/$name"
+        val stream = KetherDocsPublisher::class.java.classLoader.getResourceAsStream(path)
+            ?: error("缺少文档站资源: $path")
+        return stream.bufferedReader(Charsets.UTF_8).use { it.readText() }
     }
 
     private fun String.htmlEscape(): String = replace("&", "&amp;")

@@ -19,7 +19,7 @@ Orryx 从运行时完整注册表生成 Kether 文档，并通过 GitHub Pages �
 
 首次使用时，仓库管理员只需确认 `Settings → Pages → Build and deployment → Source` 为 **GitHub Actions**。工作流中的 `configure-pages` 也会尝试自动完成启用；组织策略禁止自动启用时才需要手动设置。
 
-部署地址：`https://mayihavek.github.io/Orryx/`。每次部署完成后，`verify` Job 会从该公网地址重新下载通道指针、Manifest 和全部资产，并核对大小与 SHA-256。
+部署地址：<https://mayihavek.github.io/Orryx/>。站点首页直接读取发布的 Registry，提供分类目录、全文搜索和各字段的结构化阅读视图；机器消费者仍应使用下述 JSON 合同。每次部署完成后，`verify` Job 会从该公网地址重新下载通道指针、Manifest 和全部资产，并核对大小与 SHA-256。
 
 通道指针只包含版本、完整 Git SHA、`releaseId` 和不可变发布清单路径。消费者应优先使用条件请求检查该小文件。
 

@@ -117,7 +117,9 @@ tasks.register<RunServer>("generateKetherDocs") {
             bundle.resolve("docs.md"),
             bundle.resolve("changes.json"),
             bundle.resolve("checksums.json"),
-            siteDirectory.resolve("index.html")
+            siteDirectory.resolve("index.html"),
+            siteDirectory.resolve("site.css"),
+            siteDirectory.resolve("site.js")
         )
         requiredFiles.forEach { file ->
             check(file.isFile && file.length() > 0L) {
@@ -128,7 +130,8 @@ tasks.register<RunServer>("generateKetherDocs") {
             "GitHub Pages marker is missing: ${siteDirectory.resolve(".nojekyll").absolutePath}"
         }
         requiredFiles.filter { it.extension == "json" }.forEach { file ->
-            runCatching { JsonSlurper().parse(file) }
+            // JsonSlurper's file parser uses CHARACTER_SOURCE, which misreads escaped quotes in Kether examples.
+            runCatching { JsonSlurper().parseText(file.readText(Charsets.UTF_8)) }
                 .getOrElse { throw GradleException("Invalid Kether documentation JSON: ${file.absolutePath}", it) }
         }
     }
