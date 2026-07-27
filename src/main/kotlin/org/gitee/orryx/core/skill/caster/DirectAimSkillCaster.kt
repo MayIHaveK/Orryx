@@ -72,7 +72,13 @@ object DirectAimSkillCaster : ISkillCaster {
                 startup.whenComplete { castResult, throwable ->
                     if (throwable == null) result.complete(castResult) else result.completeExceptionally(throwable)
                 }
-            }.onFailure { result.completeExceptionally(it) }
+            }.onFailure {
+                when (it) {
+                    is PluginMessageHandler.PlayerCancelledException,
+                    is PluginMessageHandler.AimSupersededException -> result.complete(CastResult.CANCELED)
+                    else -> result.completeExceptionally(it)
+                }
+            }
         }
         return result
     }

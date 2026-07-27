@@ -21,6 +21,7 @@ import org.gitee.orryx.core.message.collider.ColliderWireCodec
 import org.gitee.orryx.core.message.collider.ColliderWireSnapshot
 import org.gitee.orryx.core.reload.Reload
 import org.gitee.orryx.utils.*
+import org.gitee.orryx.utils.raytrace.FluidHandling
 import priv.seventeen.artist.arcartx.event.client.ClientKeyPressEvent
 import taboolib.common.LifeCycle
 import taboolib.common.platform.Awake
@@ -32,6 +33,7 @@ import taboolib.common.platform.function.warning
 import taboolib.common.util.unsafeLazy
 import taboolib.module.nms.MinecraftVersion
 import taboolib.platform.BukkitPlugin
+import taboolib.platform.util.sendLang
 import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
@@ -143,7 +145,7 @@ object PluginMessageHandler {
 
     @SubscribeEvent
     private fun onPlayerInteract(e: PlayerInteractEvent) {
-        if (DragonCorePlugin.isEnabled || GermPluginPlugin.isEnabled || ArcartXPlugin.isEnabled) return
+        if (isLegacyVersion && (DragonCorePlugin.isEnabled || GermPluginPlugin.isEnabled || ArcartXPlugin.isEnabled)) return
         when (e.action) {
             Action.LEFT_CLICK_AIR, Action.LEFT_CLICK_BLOCK -> handleConfirmation(e.player, true)
             Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK -> handleConfirmation(e.player, false)
@@ -172,10 +174,6 @@ object PluginMessageHandler {
         radius: Double,
         callback: (Result<AimInfo>) -> Unit
     ) {
-        if (!isLegacyVersion) {
-            callback(Result.failure(UnsupportedVersionException()))
-            return
-        }
         validateAimRequest(skillId, picture, radius, size)?.let {
             callback(Result.failure(it))
             return
@@ -188,14 +186,18 @@ object PluginMessageHandler {
             timeoutTicks = AIM_TIMEOUT_SECONDS * 20,
             callback = callback,
         )
-        val sent = sendDataPacket(player, PacketType.AimRequest) {
-            writeUTF(request.wireSkillId)
-            writeUTF(picture)
-            writeDouble(size)
-            writeDouble(radius)
-        }
-        if (!sent) {
-            failPendingRequest(player.uniqueId, request, AimPacketException("瞄准请求发送失败"))
+        if (isLegacyVersion) {
+            val sent = sendDataPacket(player, PacketType.AimRequest) {
+                writeUTF(request.wireSkillId)
+                writeUTF(picture)
+                writeDouble(size)
+                writeDouble(radius)
+            }
+            if (!sent) {
+                failPendingRequest(player.uniqueId, request, AimPacketException("瞄准请求发送失败"))
+            }
+        } else {
+            player.sendLang("aiming-native")
         }
     }
 
@@ -220,10 +222,6 @@ object PluginMessageHandler {
         maxTick: Long,
         callback: (Result<AimInfo>) -> Unit
     ) {
-        if (!isLegacyVersion) {
-            callback(Result.failure(UnsupportedVersionException()))
-            return
-        }
         validateAimRequest(skillId, picture, radius, min, max)?.let {
             callback(Result.failure(it))
             return
@@ -240,16 +238,20 @@ object PluginMessageHandler {
             timeoutTicks = maxTick + AIM_RESPONSE_GRACE_TICKS,
             callback = callback,
         )
-        val sent = sendDataPacket(player, PacketType.PressAimRequest) {
-            writeUTF(request.wireSkillId)
-            writeUTF(picture)
-            writeDouble(min)
-            writeDouble(max)
-            writeDouble(radius)
-            writeLong(maxTick)
-        }
-        if (!sent) {
-            failPendingRequest(player.uniqueId, request, AimPacketException("蓄力瞄准请求发送失败"))
+        if (isLegacyVersion) {
+            val sent = sendDataPacket(player, PacketType.PressAimRequest) {
+                writeUTF(request.wireSkillId)
+                writeUTF(picture)
+                writeDouble(min)
+                writeDouble(max)
+                writeDouble(radius)
+                writeLong(maxTick)
+            }
+            if (!sent) {
+                failPendingRequest(player.uniqueId, request, AimPacketException("蓄力瞄准请求发送失败"))
+            }
+        } else {
+            player.sendLang("aiming-native")
         }
     }
 
@@ -599,7 +601,7 @@ object PluginMessageHandler {
     private fun handleConfirmation(player: Player, isConfirmed: Boolean): Boolean {
         val request = pendingRequests[player.uniqueId] ?: return false
         if (!isConfirmed) {
-            if (!sendDataPacket(player, PacketType.AimConfirm) { writeBoolean(false) }) {
+            if (isLegacyVersion && !sendDataPacket(player, PacketType.AimConfirm) { writeBoolean(false) }) {
                 failPendingRequest(player.uniqueId, request, AimPacketException("瞄准取消发送失败"))
                 return true
             }
@@ -608,10 +610,46 @@ object PluginMessageHandler {
         }
         if (request.lifecycle.isConfirmed()) return true
         if (!request.lifecycle.confirm()) return true
+        if (!isLegacyVersion) {
+            completeNativeAim(player, request)
+            return true
+        }
         if (!sendDataPacket(player, PacketType.AimConfirm) { writeBoolean(true) }) {
             failPendingRequest(player.uniqueId, request, AimPacketException("瞄准确认发送失败"))
         }
         return true
+    }
+
+    private fun completeNativeAim(player: Player, request: PendingAimRequest) {
+        val eye = player.eyeLocation
+        val direction = eye.direction
+        val hitPosition = runCatching {
+            player.world.rayTraceBlocks(
+                eye.joml(),
+                direction.joml(),
+                request.maxDistance,
+                FluidHandling.NONE,
+                checkAxisAlignedBB = true,
+                returnClosestPos = false,
+            )?.hitPosition
+        }.onFailure {
+            warning("为玩家 ${player.name} 计算原生瞄准落点失败: ${it.message ?: it.javaClass.simpleName}")
+        }.getOrNull()
+
+        val target = runCatching {
+            NativeAimResolver.resolve(eye.joml(), direction.joml(), request.maxDistance, hitPosition)
+                .toLocation(player.world)
+                .apply {
+                    yaw = eye.yaw
+                    pitch = eye.pitch
+                }
+        }.getOrElse {
+            failPendingRequest(player.uniqueId, request, InvalidAimResponseException("无法计算原生瞄准落点"))
+            return
+        }
+        if (pendingRequests.remove(player.uniqueId, request) && request.lifecycle.complete()) {
+            request.future.complete(AimInfo(player, target, request.skillId))
+        }
     }
 
     private fun cleanupRequest(player: Player) {
@@ -787,6 +825,7 @@ object PluginMessageHandler {
     }
 
     /* 异常体系 */
+    @Deprecated("1.13 及以上版本已使用服务端原生瞄准回退")
     class UnsupportedVersionException : IllegalStateException("此功能仅支持 1.12.2 版本")
 
     class PlayerCancelledException : RuntimeException("玩家取消操作")
