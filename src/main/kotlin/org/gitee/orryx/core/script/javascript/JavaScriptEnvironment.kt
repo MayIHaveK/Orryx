@@ -40,7 +40,7 @@ object JavaScriptEnvironment {
     fun requireEngine(): ScriptEngine {
         if (!status.available) initialize()
         check(status.available) { "JavaScript 环境不可用: ${status.error}" }
-        return scriptEngineFactory.scriptEngine.also(::validateEngine)
+        return createEngine(JavaScriptEnvironment::class.java.classLoader).also(::validateEngine)
     }
 
     fun describe(): String {
@@ -53,7 +53,7 @@ object JavaScriptEnvironment {
     }
 
     private fun probe(): Status {
-        val engine = scriptEngineFactory.scriptEngine
+        val engine = createEngine(JavaScriptEnvironment::class.java.classLoader)
         validateEngine(engine)
         val compiled = (engine as Compilable).compile("function main(){ return 40 + 2; }")
         val bindings = engine.createBindings()
@@ -74,5 +74,15 @@ object JavaScriptEnvironment {
     private fun validateEngine(engine: ScriptEngine) {
         check(engine is Compilable) { "JavaScript 引擎不支持编译" }
         check(engine is Invocable) { "JavaScript 引擎不支持函数调用" }
+    }
+
+    internal fun createEngine(appLoader: ClassLoader): ScriptEngine {
+        val factory = scriptEngineFactory
+        val method = factory.javaClass.methods.firstOrNull {
+            it.name == "getScriptEngine" &&
+                it.parameterTypes.contentEquals(arrayOf(ClassLoader::class.java))
+        } ?: error("Nashorn 引擎不支持指定应用类加载器: ${factory.javaClass.name}")
+        return method.invoke(factory, appLoader) as? ScriptEngine
+            ?: error("Nashorn 引擎创建失败: ${factory.javaClass.name}")
     }
 }
