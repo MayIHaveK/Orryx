@@ -19,6 +19,7 @@ import org.bukkit.event.player.PlayerRespawnEvent
 import org.gitee.orryx.api.OrryxAPI
 import org.gitee.orryx.api.events.player.job.OrryxPlayerJobChangeEvents
 import org.gitee.orryx.compat.dragoncore.DragonCoreCustomPacketSender
+import org.gitee.orryx.compat.arcartx.ArcartXNetworkBridge
 import org.gitee.orryx.core.common.keyregister.KeyRegisterManager
 import org.gitee.orryx.core.common.task.SimpleTimeoutTask
 import org.gitee.orryx.core.reload.Reload
@@ -31,7 +32,6 @@ import priv.seventeen.artist.arcartx.event.client.ClientEntityJoinEvent
 import priv.seventeen.artist.arcartx.event.client.ClientEntityLeaveEvent
 import priv.seventeen.artist.arcartx.event.client.ClientKeyPressEvent
 import priv.seventeen.artist.arcartx.event.client.ClientKeyReleaseEvent
-import priv.seventeen.artist.arcartx.internal.network.NetworkMessageSender
 import taboolib.common.LifeCycle
 import taboolib.common.platform.Awake
 import taboolib.common.platform.Ghost
@@ -309,7 +309,7 @@ object StateManager {
         data.cacheJoiner.add(joiner.uniqueId)
         val joinerStatus = joinerData.status as? Status ?: return
         joinerStatus.options.controller?.let { getController(it) }?.let { controller ->
-            NetworkMessageSender.sendSetController(e.player, joiner.uniqueId, controller.saveToString())
+            ArcartXNetworkBridge.setController(e.player, joiner.uniqueId, controller.saveToString())
         }
     }
 

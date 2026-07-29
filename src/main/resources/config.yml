@@ -24,6 +24,10 @@ MemoryCache:
   Key:
     MaximumSize: 1000
     ExpireAfterAccessMinutes: 30
+# PlaceholderAPI 异步调用兼容（例如 ArcartX 客户端变量请求）
+Placeholder:
+  # 同一玩家、同一变量的最短刷新间隔（毫秒），支持热重载，范围 10-5000
+  AsyncCacheMillis: 50
 # 所有粒子效果每 Tick 最多发送的数据包数，超过预算的本帧粒子不发送
 Effect:
   MaxPacketsPerTick: 20000

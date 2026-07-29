@@ -18,7 +18,7 @@ import org.gitee.orryx.utils.ArcartXPlugin
 import org.gitee.orryx.utils.DragonArmourersPlugin
 import org.gitee.orryx.utils.DragonCorePlugin
 import org.gitee.orryx.utils.GermPluginPlugin
-import priv.seventeen.artist.arcartx.internal.network.NetworkMessageSender
+import org.gitee.orryx.compat.arcartx.ArcartXNetworkBridge
 import taboolib.common.platform.function.warning
 import taboolib.platform.util.onlinePlayers
 import java.util.*
@@ -209,10 +209,10 @@ class PlayerData(val player: Player) {
                 }
             }
             arcartXEnabled -> {
-                NetworkMessageSender.sendSetController(player, player.uniqueId, controllerString)
+                ArcartXNetworkBridge.setController(player, player.uniqueId, controllerString)
                 statusDataList().forEach {
                     if (player.uniqueId in it.cacheJoiner) {
-                        NetworkMessageSender.sendSetController(it.player, player.uniqueId, controllerString)
+                        ArcartXNetworkBridge.setController(it.player, player.uniqueId, controllerString)
                     }
                 }
             }
@@ -231,10 +231,10 @@ class PlayerData(val player: Player) {
                 }
             }
             arcartXEnabled -> {
-                NetworkMessageSender.sendSetController(player, player.uniqueId, "")
+                ArcartXNetworkBridge.setController(player, player.uniqueId, "")
                 statusDataList().forEach {
                     if (player.uniqueId in it.cacheJoiner) {
-                        NetworkMessageSender.sendSetController(it.player, player.uniqueId, "")
+                        ArcartXNetworkBridge.setController(it.player, player.uniqueId, "")
                     }
                 }
             }

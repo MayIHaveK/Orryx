@@ -9,10 +9,10 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.gitee.orryx.api.events.compat.DragonCacheLoadedEvent
 import org.gitee.orryx.compat.dragoncore.DragonCoreCustomPacketSender
+import org.gitee.orryx.compat.arcartx.ArcartXNetworkBridge
 import org.gitee.orryx.core.reload.Reload
 import org.gitee.orryx.utils.*
 import priv.seventeen.artist.arcartx.event.client.ClientChannelEvent
-import priv.seventeen.artist.arcartx.internal.network.NetworkMessageSender
 import taboolib.common.platform.Ghost
 import taboolib.common.platform.event.EventPriority
 import taboolib.common.platform.event.SubscribeEvent
@@ -103,7 +103,7 @@ object KeyRegisterManager {
                 }
                 ArcartXPlugin.isEnabled -> {
                     try {
-                        NetworkMessageSender.sendPlayerJoinPacket(player)
+                        ArcartXNetworkBridge.syncPlayer(player)
                     } catch (ex: Throwable) {
                         warning("ArcartX按键同步失败: ${ex.message}")
                     }

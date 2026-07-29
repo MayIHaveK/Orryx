@@ -1,12 +1,12 @@
 package org.gitee.orryx.core.kether.actions.compat.arcartx
 
+import org.gitee.orryx.compat.arcartx.ArcartXNetworkBridge
 import org.gitee.orryx.core.targets.ITargetEntity
 import org.gitee.orryx.core.targets.PlayerTarget
 import org.gitee.orryx.module.wiki.Action
 import org.gitee.orryx.module.wiki.Type
 import org.gitee.orryx.utils.*
 import priv.seventeen.artist.arcartx.api.ArcartXAPI
-import priv.seventeen.artist.arcartx.internal.network.NetworkMessageSender
 import taboolib.library.kether.QuestReader
 import taboolib.module.kether.*
 
@@ -38,8 +38,9 @@ object ArcartXActions {
             .addEntry("发送标识符", Type.SYMBOL, false, head = "send")
             .addEntry("音效文件", Type.STRING, false)
             .addEntry("音效类型", Type.STRING, true, "master", "category")
-            .addEntry("音量", Type.FLOAT, true, "1.0", "volume")
+            .addEntry("衰减距离", Type.INT, true, "16", "distance/distOrRoll/volume")
             .addEntry("音调", Type.FLOAT, true, "1.0", "pitch")
+            .addEntry("保持时间（毫秒）", Type.INT, true, "5000", "keepTime/duration")
             .addContainerEntry("可听玩家", true, "@self"),
         Action.new("ArcartX附属语句", "停止音效", "arcartx", true)
             .description("停止音效")
@@ -164,7 +165,7 @@ object ArcartXActions {
                                     val players = viewers.get<PlayerTarget>()
                                     entities.forEachInstance<ITargetEntity<*>> { target ->
                                         players.forEach { viewer ->
-                                            NetworkMessageSender.sendEntityAnimation(
+                                            ArcartXNetworkBridge.sendEntityAnimation(
                                                 viewer.getSource(),
                                                 target.entity.uniqueId,
                                                 animation,
@@ -198,7 +199,7 @@ object ArcartXActions {
                             val players = viewers.get<PlayerTarget>()
                             entities.forEachInstance<ITargetEntity<*>> { target ->
                                 players.forEach { viewer ->
-                                    NetworkMessageSender.sendEntityDefaultAnimationState(
+                                    ArcartXNetworkBridge.sendEntityDefaultAnimationState(
                                         viewer.getSource(),
                                         target.entity.uniqueId,
                                         animation,
@@ -216,27 +217,30 @@ object ArcartXActions {
     private fun sendSound(reader: QuestReader): ScriptAction<Any?> {
         val soundFile = reader.nextParsedAction()
         val category = reader.nextHeadAction("category", def = "master")
-        val volume = reader.nextHeadAction("volume", def = 1.0)
+        val distance = reader.nextHeadAction("distance", "distOrRoll", "volume", def = 16)
         val pitch = reader.nextHeadAction("pitch", def = 1.0)
+        val keepTime = reader.nextHeadAction("keepTime", "duration", def = 5000)
         val players = reader.nextTheyContainerOrNull()
 
         return actionNow {
             run(soundFile).str { soundFile ->
                 run(category).str { category ->
-                    run(volume).float { volume ->
+                    run(distance).int { distance ->
                         run(pitch).float { pitch ->
-                            containerOrSelf(players) {
-                                it.forEachInstance<PlayerTarget> { player ->
-                                    val loc = player.location
-                                    NetworkMessageSender.sendPlaySound(
-                                        player.getSource(),
-                                        soundFile,
-                                        loc.x.toInt(), loc.y.toInt(), loc.z.toInt(),
-                                        category,
-                                        0,
-                                        volume.toDouble(),
-                                        pitch.toInt()
-                                    )
+                            run(keepTime).int { keepTime ->
+                                containerOrSelf(players) {
+                                    it.forEachInstance<PlayerTarget> { player ->
+                                        val loc = player.location
+                                        ArcartXNetworkBridge.sendSound(
+                                            player.getSource(),
+                                            soundFile,
+                                            loc.x.toInt(), loc.y.toInt(), loc.z.toInt(),
+                                            category,
+                                            distance,
+                                            pitch.toDouble(),
+                                            keepTime,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -254,7 +258,7 @@ object ArcartXActions {
             run(soundName).str { soundName ->
                 containerOrSelf(players) {
                     it.forEachInstance<PlayerTarget> { player ->
-                        NetworkMessageSender.sendStopSound(player.getSource(), soundName)
+                        ArcartXNetworkBridge.stopSound(player.getSource(), soundName)
                     }
                 }
             }
@@ -324,7 +328,7 @@ object ArcartXActions {
                             val players = viewers.get<PlayerTarget>()
                             entities.forEachInstance<ITargetEntity<*>> { target ->
                                 players.forEach { viewer ->
-                                    NetworkMessageSender.setEntityModel(
+                                    ArcartXNetworkBridge.setEntityModel(
                                         viewer.getSource(),
                                         target.entity.uniqueId,
                                         modelName,
@@ -349,7 +353,7 @@ object ArcartXActions {
                 run(value).str { value ->
                     containerOrSelf(players) {
                         it.forEachInstance<PlayerTarget> { player ->
-                            NetworkMessageSender.sendServerVariable(player.getSource(), name, value)
+                            ArcartXNetworkBridge.setServerVariable(player.getSource(), name, value)
                         }
                     }
                 }
@@ -365,7 +369,7 @@ object ArcartXActions {
             run(name).str { name ->
                 containerOrSelf(players) {
                     it.forEachInstance<PlayerTarget> { player ->
-                        NetworkMessageSender.sendRemoveServerVariable(player.getSource(), name, false)
+                        ArcartXNetworkBridge.removeServerVariable(player.getSource(), name)
                     }
                 }
             }
@@ -382,7 +386,7 @@ object ArcartXActions {
                 run(data).str { data ->
                     containerOrSelf(players) {
                         it.forEachInstance<PlayerTarget> { player ->
-                            NetworkMessageSender.sendCustomPacket(player.getSource(), id, *data.split(",").toTypedArray())
+                            ArcartXNetworkBridge.sendCustomPacket(player.getSource(), id, *data.split(",").toTypedArray())
                         }
                     }
                 }
@@ -400,7 +404,7 @@ object ArcartXActions {
                 run(duration).int { duration ->
                     containerOrSelf(players) {
                         it.forEachInstance<PlayerTarget> { player ->
-                            NetworkMessageSender.sendShake(player.getSource(), intensity, duration)
+                            ArcartXNetworkBridge.sendShake(player.getSource(), duration, intensity)
                         }
                     }
                 }
@@ -416,7 +420,7 @@ object ArcartXActions {
             run(title).str { title ->
                 containerOrSelf(players) {
                     it.forEachInstance<PlayerTarget> { player ->
-                        NetworkMessageSender.sendClientTitle(player.getSource(), title)
+                        ArcartXNetworkBridge.setClientTitle(player.getSource(), title)
                     }
                 }
             }
