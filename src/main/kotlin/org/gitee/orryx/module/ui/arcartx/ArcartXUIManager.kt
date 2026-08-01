@@ -14,6 +14,8 @@ import priv.seventeen.artist.arcartx.event.client.ClientChannelEvent
 import priv.seventeen.artist.arcartx.event.client.ClientCustomPacketEvent
 import priv.seventeen.artist.arcartx.event.client.ClientKeyPressEvent
 import priv.seventeen.artist.arcartx.event.client.ClientKeyReleaseEvent
+import priv.seventeen.artist.arcartx.event.client.ClientSimpleKeyPressEvent
+import priv.seventeen.artist.arcartx.event.client.ClientSimpleKeyReleaseEvent
 import taboolib.common.platform.function.getDataFolder
 import taboolib.common.platform.function.registerBukkitListener
 import taboolib.common.platform.function.releaseResourceFile
@@ -48,6 +50,14 @@ class ArcartXUIManager: IUIManager {
         }
 
         registerBukkitListener(ClientKeyReleaseEvent::class.java) { e ->
+            e.player.keyRelease(e.keyName.uppercase(), setting.castType == IKeyRegister.ActionType.RELEASE)
+        }
+
+        registerBukkitListener(ClientSimpleKeyPressEvent::class.java) { e ->
+            e.player.keyPress(e.keyName.uppercase(), setting.castType == IKeyRegister.ActionType.PRESS)
+        }
+
+        registerBukkitListener(ClientSimpleKeyReleaseEvent::class.java) { e ->
             e.player.keyRelease(e.keyName.uppercase(), setting.castType == IKeyRegister.ActionType.RELEASE)
         }
 

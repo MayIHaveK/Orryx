@@ -32,6 +32,8 @@ import priv.seventeen.artist.arcartx.event.client.ClientEntityJoinEvent
 import priv.seventeen.artist.arcartx.event.client.ClientEntityLeaveEvent
 import priv.seventeen.artist.arcartx.event.client.ClientKeyPressEvent
 import priv.seventeen.artist.arcartx.event.client.ClientKeyReleaseEvent
+import priv.seventeen.artist.arcartx.event.client.ClientSimpleKeyPressEvent
+import priv.seventeen.artist.arcartx.event.client.ClientSimpleKeyReleaseEvent
 import taboolib.common.LifeCycle
 import taboolib.common.platform.Awake
 import taboolib.common.platform.Ghost
@@ -224,6 +226,12 @@ object StateManager {
 
     @Ghost
     @SubscribeEvent
+    private fun press(e: ClientSimpleKeyPressEvent) {
+        handleKeyPress(e.player, e.keyName.uppercase())
+    }
+
+    @Ghost
+    @SubscribeEvent
     private fun release(e: KeyReleaseEvent) {
         if (e.isCancelled) return
         val data = playerDataMap.getOrPut(e.player.uniqueId) { PlayerData(e.player) }
@@ -258,11 +266,21 @@ object StateManager {
     @Ghost
     @SubscribeEvent
     private fun release(e: ClientKeyReleaseEvent) {
-        val data = playerDataMap.getOrPut(e.player.uniqueId) { PlayerData(e.player) }
+        handleArcartXKeyRelease(e.player, e.keyName)
+    }
+
+    @Ghost
+    @SubscribeEvent
+    private fun release(e: ClientSimpleKeyReleaseEvent) {
+        handleArcartXKeyRelease(e.player, e.keyName)
+    }
+
+    private fun handleArcartXKeyRelease(player: Player, keyName: String) {
+        val data = playerDataMap.getOrPut(player.uniqueId) { PlayerData(player) }
         val running = data.nowRunningState as? PressGeneralAttackState.Running ?: return
 
-        e.player.keySetting {
-            if (it.generalAttackKey == e.keyName.uppercase()) {
+        player.keySetting {
+            if (it.generalAttackKey == keyName.uppercase()) {
                 running.castAttack()
             }
         }

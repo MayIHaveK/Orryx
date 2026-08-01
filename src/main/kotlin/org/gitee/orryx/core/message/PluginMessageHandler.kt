@@ -23,6 +23,7 @@ import org.gitee.orryx.core.reload.Reload
 import org.gitee.orryx.utils.*
 import org.gitee.orryx.utils.raytrace.FluidHandling
 import priv.seventeen.artist.arcartx.event.client.ClientKeyPressEvent
+import priv.seventeen.artist.arcartx.event.client.ClientSimpleKeyPressEvent
 import taboolib.common.LifeCycle
 import taboolib.common.platform.Awake
 import taboolib.common.platform.Ghost
@@ -134,10 +135,20 @@ object PluginMessageHandler {
     @Ghost
     @SubscribeEvent(priority = EventPriority.LOWEST)
     private fun onKeyPress(e: ClientKeyPressEvent) {
-        e.player.keySetting {
-            when (e.keyName.uppercase()) {
-                it.aimConfirmKey -> handleConfirmation(e.player, true)
-                it.aimCancelKey -> handleConfirmation(e.player, false)
+        handleArcartXKeyPress(e.player, e.keyName)
+    }
+
+    @Ghost
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    private fun onKeyPress(e: ClientSimpleKeyPressEvent) {
+        handleArcartXKeyPress(e.player, e.keyName)
+    }
+
+    private fun handleArcartXKeyPress(player: Player, keyName: String) {
+        player.keySetting {
+            when (keyName.uppercase()) {
+                it.aimConfirmKey -> handleConfirmation(player, true)
+                it.aimCancelKey -> handleConfirmation(player, false)
                 else -> return@keySetting
             }
         }
