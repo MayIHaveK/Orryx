@@ -1,0 +1,12 @@
+{
+    "formatVersion": 1,
+    "algorithm": "SHA-256",
+    "files": {
+        "kether-registry.json": "1d7a86730fefd0b49d87c2b96f1090af089e2a71d64fa890173c8051c72bf979",
+        "kether-registry.schema.json": "298c997a400d06605c3f5c050c629e47ef764253b19181e523f6a9d5ec47f080",
+        "actions-schema.json": "247671fa63fe81fc61dd432d7bc531153e16bcad91e9f13515e58f848922d24f",
+        "actions-schema.schema.json": "e7d179e3cb7c96f0789a5c0994840b5a856e8ff2df72b09754c64743fc373bc8",
+        "docs.md": "126a0897c44ce9e584d7609565edc487f9a59a4fce530e05e78e15de8978ecec",
+        "changes.json": "cf7e4d09a9d34ab3f6c7397aba5077f814293aa32b13b633cf83f9347745f7f3"
+    }
+}
