@@ -24,13 +24,6 @@ ui:
   action:
     load: |-
       var.已创建 = 0
-tasks:
-  每秒更新任务:
-    type: loop
-    time: 2000
-    cycle: 1000
-    run: |-
-      Packet.send('OrryxUpdateHUD')
 controls:
 
   adapt:

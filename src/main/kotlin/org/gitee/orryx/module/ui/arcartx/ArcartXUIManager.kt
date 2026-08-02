@@ -10,8 +10,8 @@ import org.gitee.orryx.module.ui.ISkillUI
 import org.gitee.orryx.module.ui.IUIManager
 import org.gitee.orryx.utils.*
 import priv.seventeen.artist.arcartx.api.ArcartXAPI
-import priv.seventeen.artist.arcartx.event.client.ClientChannelEvent
 import priv.seventeen.artist.arcartx.event.client.ClientCustomPacketEvent
+import priv.seventeen.artist.arcartx.event.client.ClientInitializedEvent
 import priv.seventeen.artist.arcartx.event.client.ClientKeyPressEvent
 import priv.seventeen.artist.arcartx.event.client.ClientKeyReleaseEvent
 import priv.seventeen.artist.arcartx.event.client.ClientSimpleKeyPressEvent
@@ -61,12 +61,12 @@ class ArcartXUIManager: IUIManager {
             e.player.keyRelease(e.keyName.uppercase(), setting.castType == IKeyRegister.ActionType.RELEASE)
         }
 
-        registerBukkitListener(ClientChannelEvent::class.java) { e ->
-            if (setting.joinOpenHud) {
-                e.player.orryxProfileTo {
-                    if (e.player.isOnline && it.job != null) createSkillHUD(e.player, e.player).open()
-                }
-            }
+        registerBukkitListener(ClientInitializedEvent.End::class.java) { e ->
+            openSkillHud(e.player)
+        }
+
+        registerBukkitListener(ClientInitializedEvent.Reload::class.java) { e ->
+            openSkillHud(e.player)
         }
 
         registerBukkitListener(ClientCustomPacketEvent::class.java) { e ->
@@ -75,7 +75,7 @@ class ArcartXUIManager: IUIManager {
                     ArcartXSkillUI(e.player, e.player).open()
                 }
                 "OrryxUpdateHUD" -> {
-                    ArcartXSkillHud(e.player, e.player).update()
+                    ArcartXSkillHud.getViewerHud(e.player)?.update()
                 }
                 "OrryxSelectSkill" -> {
                     if (e.data.size >= 2) {
@@ -133,6 +133,13 @@ class ArcartXUIManager: IUIManager {
 
         registerBukkitListener(PlayerQuitEvent::class.java) { e ->
             ArcartXSkillHud.closeForPlayer(e.player)
+        }
+    }
+
+    private fun openSkillHud(player: Player) {
+        if (!setting.joinOpenHud) return
+        player.orryxProfileTo {
+            if (player.isOnline && it.job != null) createSkillHUD(player, player).open()
         }
     }
 

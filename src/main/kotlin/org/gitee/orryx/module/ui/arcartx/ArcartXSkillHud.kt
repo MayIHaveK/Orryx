@@ -118,7 +118,10 @@ open class ArcartXSkillHud(override val viewer: Player, override val owner: Play
         generation++
         active = true
         index.register(this)
-        ArcartXAPI.getUIRegistry().open(viewer, "OrryxSkillHUD")
+        val expectedGeneration = generation
+        ArcartXAPI.getUIRegistry().open(viewer, "OrryxSkillHUD") {
+            if (isCurrent(expectedGeneration)) update()
+        }
         update()
     }
 
