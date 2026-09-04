@@ -11,6 +11,11 @@ import taboolib.library.kether.QuestReader
 import taboolib.module.kether.*
 import java.util.concurrent.CompletableFuture
 
+internal const val EMPTY_COMBO_OPERAND = "<empty>"
+
+internal fun normalizeComboOperand(value: String): String =
+    if (value == EMPTY_COMBO_OPERAND) "" else value
+
 object MayDMZAnimationActions {
 
     @KetherParser(["maydmz", "dmzanimation"], namespace = ORRYX_NAMESPACE, shared = true)
@@ -35,11 +40,11 @@ object MayDMZAnimationActions {
         wiki("原子替换主动连击")
             .addEntry("连击标识符", Type.SYMBOL, head = "combo")
             .addEntry("原子替换标识符", Type.SYMBOL, head = "compare-and-set")
-            .addEntry("预期的当前连击 ID；空字符串表示无指派", Type.STRING)
-            .addEntry("新的连击 ID；空字符串表示清除", Type.STRING)
+            .addEntry("预期的当前连击 ID；保留值 \"<empty>\" 表示无指派", Type.STRING)
+            .addEntry("新的连击 ID；保留值 \"<empty>\" 表示清除", Type.STRING)
             .addContainerEntry("目标玩家", true, "@self")
             .result("玩家 UUID 到替换结果的映射；并发变化返回 conflict", Type.MAP)
-            .example("maydmz combo compare-and-set \"maydmz:rapid_tap_demo\" \"\" they @self"),
+            .example("maydmz combo compare-and-set \"maydmz:rapid_tap_demo\" \"<empty>\" they @self"),
         wiki("查询主动连击")
             .addEntry("连击标识符", Type.SYMBOL, head = "combo")
             .addEntry("查询标识符", Type.SYMBOL, head = "current")
@@ -229,7 +234,9 @@ object MayDMZAnimationActions {
                             targets.get<PlayerTarget>().associate { target ->
                                 val player = target.getSource()
                                 player.uniqueId.toString() to MayDMZAnimationCompat.compareAndSetCombo(
-                                    player, resolvedExpected, resolvedReplacement
+                                    player,
+                                    normalizeComboOperand(resolvedExpected),
+                                    normalizeComboOperand(resolvedReplacement),
                                 )
                             }
                         }

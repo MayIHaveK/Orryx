@@ -214,7 +214,7 @@ Orryx 通过 MayDMZAnimation 的独立公共 API 和 Bukkit Services 接入，�
 - `maydmz available`：API 服务当前是否可用。
 - `maydmz combo assign <连击ID> [they <玩家容器>]`：分配主动连击；调用时不播放，第一次物理输入才开始。
 - `maydmz combo clear [they <玩家容器>]`：清除主动连击并释放旧输入绑定；没有管理员自定义默认组合技时，下一次攻击恢复 DragonMineZ 原生平 A。
-- `maydmz combo compare-and-set <预期ID或空字符串> <新ID或空字符串> [they <玩家容器>]`：仅当显式分配仍等于预期值时原子替换；并发变化返回 `conflict`。
+- `maydmz combo compare-and-set <预期ID或"<empty>"> <新ID或"<empty>"> [they <玩家容器>]`：仅当显式分配仍等于预期值时原子替换；`"<empty>"` 表示无分配或清除，并发变化返回 `conflict`。
 - `maydmz combo current [they <玩家容器>]`：查询当前分配，未分配时值为空字符串。
 - `maydmz combo exists <连击ID>`：连击目录是否包含该 ID。
 - `maydmz action exists <动作ID>`：动作目录是否包含该 ID。
@@ -230,7 +230,7 @@ MayDMZAnimation 的 `ActionRejection` 小写名一致，例如 `unknown_action`�
 
 ```text
 maydmz combo assign "maydmz:rapid_tap_demo" they @self
-maydmz combo compare-and-set "maydmz:rapid_tap_demo" "" they @self
+maydmz combo compare-and-set "maydmz:rapid_tap_demo" "<empty>" they @self
 maydmz action start "maydmz:skill_attack" priority 100 policy replace they @self
 maydmz action signal "hit_confirm" channel "upper_body" they @self
 maydmz action cancel "skill_interrupted" they @self

@@ -30,9 +30,14 @@ Actions: |-
       return value == null ? "" : String(value);
   }
 
+  function comboOperand(comboId) {
+      var value = String(comboId);
+      return value.length === 0 ? '"<empty>"' : '"' + value + '"';
+  }
+
   function restoreIfStillOwned(previousCombo) {
-      var command = 'maydmz combo compare-and-set "' + DEMO_COMBO
-          + '" "' + previousCombo + '" they @self';
+      var command = 'maydmz combo compare-and-set ' + comboOperand(DEMO_COMBO)
+          + ' ' + comboOperand(previousCombo) + ' they @self';
       return kether.run(command).thenApply(function(restored) {
           var outcome = resultForSelf(restored);
           var accepted = previousCombo.length === 0
@@ -60,8 +65,8 @@ Actions: |-
           }
           return kether.run("maydmz combo current they @self").thenCompose(function(current) {
               var previousCombo = resultForSelf(current);
-              var assignCommand = 'maydmz combo compare-and-set "' + previousCombo
-                  + '" "' + DEMO_COMBO + '" they @self';
+              var assignCommand = 'maydmz combo compare-and-set ' + comboOperand(previousCombo)
+                  + ' ' + comboOperand(DEMO_COMBO) + ' they @self';
               return kether.run(assignCommand)
                   .thenCompose(function(results) {
                       var outcome = resultForSelf(results);

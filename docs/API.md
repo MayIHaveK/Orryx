@@ -1097,7 +1097,7 @@ Kether 是 Orryx 的主要脚本引擎，提供 40+ 内置动作。
 maydmz combo assign "maydmz:rapid_tap_demo" they @self
 maydmz combo current they @self
 maydmz combo clear they @self
-maydmz combo compare-and-set "maydmz:rapid_tap_demo" "" they @self
+maydmz combo compare-and-set "maydmz:rapid_tap_demo" "<empty>" they @self
 maydmz playback play "maydmz.smoke.upper_wave" mode loop duration 200 they @self
 maydmz playback play-handle "maydmz.smoke.upper_wave" mode loop duration 200 they @self
 maydmz playback stop transition 4.0 they @self
@@ -1105,7 +1105,7 @@ maydmz playback stop-instance <播放实例号> transition 4.0
 ```
 
 `combo assign` 只选择由客户端物理输入驱动的连招，调用本身不播放动作。`combo compare-and-set` 仅在当前
-显式分配仍等于第一个参数时替换为第二个参数，空字符串表示无分配；并发变化返回 `conflict`，适合临时技能安全恢复。
+显式分配仍等于第一个参数时替换为第二个参数；保留值 `"<empty>"` 表示无分配或清除，避免 Kether 无法解析空引号；并发变化返回 `conflict`，适合临时技能安全恢复。
 `play` 保持原有成功玩家计数返回值；
 `play-handle` 返回玩家 UUID 到 `Long` 实例号的 Map，适合稍后用 `stop-instance` 精确结束。
 Orryx 只在 MayDMZAnimation 的公开 API 接口上解析方法，不反射混淆后的 provider 实现，也不链接 Mod 协议类。

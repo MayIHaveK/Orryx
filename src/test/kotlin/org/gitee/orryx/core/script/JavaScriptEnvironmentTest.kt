@@ -24,6 +24,8 @@ class JavaScriptEnvironmentTest {
 
         assertTrue(sample.contains("maydmz combo compare-and-set"))
         assertTrue(sample.contains("maydmz combo current"))
+        assertTrue(sample.contains("comboOperand(previousCombo)"))
+        assertTrue(sample.contains("'\"<empty>\"'"))
         assertTrue(sample.contains("第一次点击才会开始动画"))
         assertTrue(sample.contains("恢复 DragonMineZ 原生平 A"))
         assertTrue(sample.contains("outcome === \"cleared\" || outcome === \"unchanged\""))
@@ -32,6 +34,23 @@ class JavaScriptEnvironmentTest {
         assertTrue(!sample.contains("maydmz action start"))
         JavaScriptRuntime.validate(
             JavaScriptCompiledScript("maydmz-combo-example", actionSource(sample)),
+        )
+
+        val engine = JavaScriptEnvironment.createEngine(javaClass.classLoader)
+        val bindings = engine.createBindings()
+        (engine as Compilable).compile(actionSource(sample)).eval(bindings)
+        assertEquals("\"<empty>\"", engine.eval("comboOperand('')", bindings))
+        assertEquals(
+            "\"maydmz:rapid_tap_demo\"",
+            engine.eval("comboOperand('maydmz:rapid_tap_demo')", bindings),
+        )
+        assertEquals(
+            "maydmz combo compare-and-set \"<empty>\" \"maydmz:rapid_tap_demo\" they @self",
+            engine.eval(
+                "'maydmz combo compare-and-set ' + comboOperand('') + ' ' + " +
+                    "comboOperand('maydmz:rapid_tap_demo') + ' they @self'",
+                bindings,
+            ),
         )
     }
 
