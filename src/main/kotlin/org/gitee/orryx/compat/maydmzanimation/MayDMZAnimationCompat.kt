@@ -26,6 +26,10 @@ object MayDMZAnimationCompat {
         return guarded.invoke { it.clearCombo(player) }
     }
 
+    fun compareAndSetCombo(player: Player, expectedCurrent: String, replacement: String): String {
+        return guarded.invoke { it.compareAndSetCombo(player, expectedCurrent, replacement) }
+    }
+
     fun assignedCombo(player: Player): String? {
         return guarded.invoke { it.assignedCombo(player) }
     }
@@ -81,6 +85,7 @@ object MayDMZAnimationCompat {
         fun available(): Boolean
         fun assignCombo(player: Player, comboId: String): String
         fun clearCombo(player: Player): String
+        fun compareAndSetCombo(player: Player, expectedCurrent: String, replacement: String): String
         fun assignedCombo(player: Player): String?
         fun comboExists(comboId: String): Boolean
         fun start(player: Player, actionId: String, band: Int?, policy: String): String
@@ -105,6 +110,8 @@ object MayDMZAnimationCompat {
         override fun available() = false
         override fun assignCombo(player: Player, comboId: String) = "unavailable"
         override fun clearCombo(player: Player) = "unavailable"
+        override fun compareAndSetCombo(player: Player, expectedCurrent: String, replacement: String) =
+            "unavailable"
         override fun assignedCombo(player: Player): String? = null
         override fun comboExists(comboId: String) = false
         override fun start(player: Player, actionId: String, band: Int?, policy: String) = "unavailable"
@@ -130,6 +137,8 @@ object MayDMZAnimationCompat {
         override fun assignCombo(player: Player, comboId: String) =
             MayDMZAnimationApiBridge.assignCombo(player, comboId)
         override fun clearCombo(player: Player) = MayDMZAnimationApiBridge.clearCombo(player)
+        override fun compareAndSetCombo(player: Player, expectedCurrent: String, replacement: String) =
+            MayDMZAnimationApiBridge.compareAndSetCombo(player, expectedCurrent, replacement)
         override fun assignedCombo(player: Player) = MayDMZAnimationApiBridge.assignedCombo(player)
         override fun comboExists(comboId: String) = MayDMZAnimationApiBridge.comboExists(comboId)
         override fun start(player: Player, actionId: String, band: Int?, policy: String) =

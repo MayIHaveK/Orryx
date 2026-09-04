@@ -9,6 +9,7 @@ Options:
     - '&f用 JavaScript 异步调用 Orryx Kether 桥'
     - '&f启用等待点击的 &bmaydmz:rapid_tap_demo'
     - '&f仅在本示例改动分配时，&b200 tick &f后安全恢复原设置'
+    - '&f原设置为空时清除指派，并恢复 DragonMineZ 原生平 A'
     - '&7需要安装并激活 MayDMZAnimation'
   IsLocked: false
   MinLevel: 1
@@ -30,18 +31,23 @@ Actions: |-
   }
 
   function restoreIfStillOwned(previousCombo) {
-      var CompletableFuture = Java.type("java.util.concurrent.CompletableFuture");
-      return kether.run("maydmz combo current they @self").thenCompose(function(current) {
-          if (resultForSelf(current) !== DEMO_COMBO) {
-              return CompletableFuture.completedFuture(false);
+      var command = 'maydmz combo compare-and-set "' + DEMO_COMBO
+          + '" "' + previousCombo + '" they @self';
+      return kether.run(command).thenApply(function(restored) {
+          var outcome = resultForSelf(restored);
+          var accepted = previousCombo.length === 0
+              ? outcome === "cleared" || outcome === "unchanged"
+              : outcome === "assigned" || outcome === "unchanged";
+          if (!accepted) {
+              player.sendMessage(outcome === "conflict"
+                  ? "§e[Orryx] 连点示例结束；其他操作已接管分配，保持其新设置。"
+                  : "§c[Orryx] 连点示例结束，但恢复原分配失败: " + outcome);
+              return false;
           }
-          var command = previousCombo.length === 0
-              ? "maydmz combo clear they @self"
-              : 'maydmz combo assign "' + previousCombo + '" they @self';
-          return kether.run(command).thenApply(function(restored) {
-              player.sendMessage("§7[Orryx] 连点示例已结束，原连招分配已恢复。");
-              return true;
-          });
+          player.sendMessage(previousCombo.length === 0
+              ? "§7[Orryx] 连点示例已结束，已清除指派并恢复 DragonMineZ 原生平 A。"
+              : "§7[Orryx] 连点示例已结束，原连招分配已恢复。");
+          return true;
       });
   }
 
@@ -54,7 +60,9 @@ Actions: |-
           }
           return kether.run("maydmz combo current they @self").thenCompose(function(current) {
               var previousCombo = resultForSelf(current);
-              return kether.run('maydmz combo assign "' + DEMO_COMBO + '" they @self')
+              var assignCommand = 'maydmz combo compare-and-set "' + previousCombo
+                  + '" "' + DEMO_COMBO + '" they @self';
+              return kether.run(assignCommand)
                   .thenCompose(function(results) {
                       var outcome = resultForSelf(results);
                       if (outcome !== "assigned" && outcome !== "unchanged") {
@@ -67,9 +75,7 @@ Actions: |-
                       }
                       return scheduler.later(function() {
                           return restoreIfStillOwned(previousCombo);
-                      }, 200).thenApply(function() {
-                          return true;
-                      });
+                      }, 200);
                   });
               });
       });

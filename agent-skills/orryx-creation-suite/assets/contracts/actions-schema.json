@@ -3920,7 +3920,7 @@
   ],
   "schemaVersion": "1.0",
   "sourceRoot": "src/main/kotlin/org/gitee/orryx/core/kether",
-  "sourceSha256": "362282c8445638f7cf626e5ae233543a9f5b7f20e69b6f07e86f3b6687151d5f",
+  "sourceSha256": "f06a2579fd150639835ee0597e2c9ae0e37fb06dc8cb70998626d0b867c8e7b7",
   "summary": {
     "actionCount": 125,
     "aliasCount": 10,

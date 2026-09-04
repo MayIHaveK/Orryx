@@ -32,6 +32,14 @@ object MayDMZAnimationActions {
             .addContainerEntry("目标玩家", true, "@self")
             .result("玩家 UUID 到清除结果的映射", Type.MAP)
             .example("maydmz combo clear they @self"),
+        wiki("原子替换主动连击")
+            .addEntry("连击标识符", Type.SYMBOL, head = "combo")
+            .addEntry("原子替换标识符", Type.SYMBOL, head = "compare-and-set")
+            .addEntry("预期的当前连击 ID；空字符串表示无指派", Type.STRING)
+            .addEntry("新的连击 ID；空字符串表示清除", Type.STRING)
+            .addContainerEntry("目标玩家", true, "@self")
+            .result("玩家 UUID 到替换结果的映射；并发变化返回 conflict", Type.MAP)
+            .example("maydmz combo compare-and-set \"maydmz:rapid_tap_demo\" \"\" they @self"),
         wiki("查询主动连击")
             .addEntry("连击标识符", Type.SYMBOL, head = "combo")
             .addEntry("查询标识符", Type.SYMBOL, head = "current")
@@ -130,9 +138,10 @@ object MayDMZAnimationActions {
         it.switch {
             case("available") { available() }
             case("combo") {
-                when (it.expects("assign", "clear", "current", "exists")) {
+                when (it.expects("assign", "clear", "compare-and-set", "current", "exists")) {
                     "assign" -> assignCombo(it)
                     "clear" -> clearCombo(it)
+                    "compare-and-set" -> compareAndSetCombo(it)
                     "current" -> currentCombo(it)
                     "exists" -> comboExists(it)
                     else -> error("MayDMZAnimation combo 语句书写错误")
@@ -202,6 +211,28 @@ object MayDMZAnimationActions {
                     targets.get<PlayerTarget>().associate { target ->
                         val player = target.getSource()
                         player.uniqueId.toString() to MayDMZAnimationCompat.clearCombo(player)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun compareAndSetCombo(reader: QuestReader): ScriptAction<Any?> {
+        val expectedCurrent = reader.nextParsedAction()
+        val replacement = reader.nextParsedAction()
+        val players = reader.nextTheyContainerOrNull()
+        return actionFuture { future ->
+            run(expectedCurrent).str { resolvedExpected ->
+                run(replacement).str { resolvedReplacement ->
+                    containerOrSelf(players) { targets ->
+                        completeMain(future) {
+                            targets.get<PlayerTarget>().associate { target ->
+                                val player = target.getSource()
+                                player.uniqueId.toString() to MayDMZAnimationCompat.compareAndSetCombo(
+                                    player, resolvedExpected, resolvedReplacement
+                                )
+                            }
+                        }
                     }
                 }
             }

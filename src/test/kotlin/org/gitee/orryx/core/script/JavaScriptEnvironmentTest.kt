@@ -22,10 +22,13 @@ class JavaScriptEnvironmentTest {
             javaClass.classLoader.getResourceAsStream("skills/MayDMZAnimation-JavaScript示例.yml"),
         ).bufferedReader(Charsets.UTF_8).use { it.readText() }
 
-        assertTrue(sample.contains("maydmz combo assign"))
+        assertTrue(sample.contains("maydmz combo compare-and-set"))
         assertTrue(sample.contains("maydmz combo current"))
-        assertTrue(sample.contains("maydmz combo clear"))
         assertTrue(sample.contains("第一次点击才会开始动画"))
+        assertTrue(sample.contains("恢复 DragonMineZ 原生平 A"))
+        assertTrue(sample.contains("outcome === \"cleared\" || outcome === \"unchanged\""))
+        assertTrue(sample.contains("其他操作已接管分配"))
+        assertTrue(!sample.contains("}, 200).thenApply"))
         assertTrue(!sample.contains("maydmz action start"))
         JavaScriptRuntime.validate(
             JavaScriptCompiledScript("maydmz-combo-example", actionSource(sample)),

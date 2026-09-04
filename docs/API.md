@@ -1097,13 +1097,16 @@ Kether 是 Orryx 的主要脚本引擎，提供 40+ 内置动作。
 maydmz combo assign "maydmz:rapid_tap_demo" they @self
 maydmz combo current they @self
 maydmz combo clear they @self
+maydmz combo compare-and-set "maydmz:rapid_tap_demo" "" they @self
 maydmz playback play "maydmz.smoke.upper_wave" mode loop duration 200 they @self
 maydmz playback play-handle "maydmz.smoke.upper_wave" mode loop duration 200 they @self
 maydmz playback stop transition 4.0 they @self
 maydmz playback stop-instance <播放实例号> transition 4.0
 ```
 
-`combo assign` 只选择由客户端物理输入驱动的连招，调用本身不播放动作。`play` 保持原有成功玩家计数返回值；
+`combo assign` 只选择由客户端物理输入驱动的连招，调用本身不播放动作。`combo compare-and-set` 仅在当前
+显式分配仍等于第一个参数时替换为第二个参数，空字符串表示无分配；并发变化返回 `conflict`，适合临时技能安全恢复。
+`play` 保持原有成功玩家计数返回值；
 `play-handle` 返回玩家 UUID 到 `Long` 实例号的 Map，适合稍后用 `stop-instance` 精确结束。
 Orryx 只在 MayDMZAnimation 的公开 API 接口上解析方法，不反射混淆后的 provider 实现，也不链接 Mod 协议类。
 
@@ -1152,7 +1155,9 @@ Orryx 通过 TabooLib JavaScript 模块加载 Nashorn。Java 8 使用 JDK 内置
 - `plugins/Orryx/skills/JavaScript示例.yml`：默认启用，可执行 `/skill cast <玩家> JavaScript示例 1 false` 测试。
 - `plugins/Orryx/skills/MayDMZAnimation-JavaScript示例.yml`：用 JS 通过 `kether.run` 异步调用可选
   MayDMZAnimation 主动连击分配服务；cast 本身不播放动画，第一次及后续点击攻击键推进四段。本示例仅在
-  自己改变分配后延迟恢复旧值，可执行 `/or skill cast <玩家> MayDMZAnimation-JavaScript示例` 测试。
+  自己通过原子 compare-and-set 改变分配后延迟恢复旧值，不会覆盖期间由玩家或其他插件设置的新分配；旧值为空时
+  会 clear，并在没有管理员自定义默认组合技时恢复 DragonMineZ 原生平 A。
+  随 MayDMZAnimation 发布的六个组合技示例均非默认组合技。可执行 `/or skill cast <玩家> MayDMZAnimation-JavaScript示例` 测试。
 - `plugins/Orryx/skills/MayDMZAnimation-JavaScript普通播放示例.yml`：播放
   `maydmz.smoke.upper_wave` 循环动画，保存 `play-handle` 返回的实例号，并通过 `scheduler.later` 在 40 tick 后执行
   `maydmz playback stop-instance <实例号> transition 4.0`；可执行

@@ -213,7 +213,8 @@ Orryx 通过 MayDMZAnimation 的独立公共 API 和 Bukkit Services 接入，�
 
 - `maydmz available`：API 服务当前是否可用。
 - `maydmz combo assign <连击ID> [they <玩家容器>]`：分配主动连击；调用时不播放，第一次物理输入才开始。
-- `maydmz combo clear [they <玩家容器>]`：清除主动连击并释放旧输入绑定。
+- `maydmz combo clear [they <玩家容器>]`：清除主动连击并释放旧输入绑定；没有管理员自定义默认组合技时，下一次攻击恢复 DragonMineZ 原生平 A。
+- `maydmz combo compare-and-set <预期ID或空字符串> <新ID或空字符串> [they <玩家容器>]`：仅当显式分配仍等于预期值时原子替换；并发变化返回 `conflict`。
 - `maydmz combo current [they <玩家容器>]`：查询当前分配，未分配时值为空字符串。
 - `maydmz combo exists <连击ID>`：连击目录是否包含该 ID。
 - `maydmz action exists <动作ID>`：动作目录是否包含该 ID。
@@ -229,6 +230,7 @@ MayDMZAnimation 的 `ActionRejection` 小写名一致，例如 `unknown_action`�
 
 ```text
 maydmz combo assign "maydmz:rapid_tap_demo" they @self
+maydmz combo compare-and-set "maydmz:rapid_tap_demo" "" they @self
 maydmz action start "maydmz:skill_attack" priority 100 policy replace they @self
 maydmz action signal "hit_confirm" channel "upper_body" they @self
 maydmz action cancel "skill_interrupted" they @self
@@ -263,7 +265,8 @@ return kether.run('maydmz playback play-handle "maydmz.smoke.upper_wave" mode lo
 内置的 `skills/MayDMZAnimation-JavaScript示例.yml` 使用 `ScriptEngine: JAVASCRIPT`，从 JS 调用
 `kether.run(...)` 并返回组合后的 `CompletableFuture`，不会阻塞主线程。它先执行 `maydmz available`，可用时
 分配 `maydmz:rapid_tap_demo`，调用时不会播放动画，随后由玩家第一次及连续点击攻击键推进四段；只有本示例
-实际改变了分配时，才会在 200 tick 后比较当前值并安全恢复此前分配，避免覆盖玩家或其他插件稍后作出的修改。
+实际改变了分配时，才会在 200 tick 后通过 API 的原子 compare-and-set 安全恢复此前分配，避免覆盖玩家或其他插件稍后作出的修改。
+此前为空分配时会执行 clear；随 MayDMZAnimation 发布的示例均非默认组合技，因此会恢复 DragonMineZ 原生平 A。
 缺失插件或分配被拒绝时向玩家显示安全降级结果。示例使用公开 `ComboAssignmentService`，Orryx 不接触按键协议、
 组合图解释器或资源传输内部实现。测试命令：
 

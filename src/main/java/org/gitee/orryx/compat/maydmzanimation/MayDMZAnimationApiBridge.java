@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -45,9 +46,7 @@ public final class MayDMZAnimationApiBridge {
                 player,
                 comboId
         );
-        return ((Enum<?>) invoke(
-                result, apiType("ComboAssignmentResult"), "status", new Class<?>[0]
-        )).name().toLowerCase(Locale.ROOT);
+        return assignmentStatus(result);
     }
 
     public static String clearCombo(Player player) {
@@ -60,9 +59,42 @@ public final class MayDMZAnimationApiBridge {
                 new Class<?>[]{Player.class},
                 player
         );
-        return ((Enum<?>) invoke(
-                result, apiType("ComboAssignmentResult"), "status", new Class<?>[0]
-        )).name().toLowerCase(Locale.ROOT);
+        return assignmentStatus(result);
+    }
+
+    /** Atomically replaces a temporary assignment without overwriting a newer owner. */
+    public static String compareAndSetCombo(
+            Player player, String expectedCurrent, String replacement
+    ) {
+        Objects.requireNonNull(expectedCurrent, "expectedCurrent");
+        Objects.requireNonNull(replacement, "replacement");
+        Object service = service("combos");
+        if (service == null) return "unavailable";
+        Class<?> serviceType = apiType("ComboAssignmentService");
+        Optional<Object> atomic = invokeOptional(
+                service,
+                serviceType,
+                "compareAndSet",
+                new Class<?>[]{Player.class, Optional.class, Optional.class},
+                player,
+                optionalCombo(expectedCurrent),
+                optionalCombo(replacement)
+        );
+        if (atomic.isPresent()) return assignmentStatus(atomic.get());
+
+        // Legacy providers have no CAS method. Kether invokes this whole bridge call in one
+        // Bukkit-main-thread task, so the read and mutation still cannot interleave there.
+        Optional<?> current = (Optional<?>) invoke(
+                service, serviceType, "assigned", new Class<?>[]{Player.class}, player
+        );
+        String currentId = current.map(String::valueOf).orElse("");
+        if (!currentId.equals(expectedCurrent)) return "conflict";
+        if (currentId.equals(replacement)) return "unchanged";
+        Object result = replacement.isEmpty()
+                ? invoke(service, serviceType, "clear", new Class<?>[]{Player.class}, player)
+                : invoke(service, serviceType, "assign",
+                        new Class<?>[]{Player.class, String.class}, player, replacement);
+        return assignmentStatus(result);
     }
 
     public static String assignedCombo(Player player) {
@@ -232,6 +264,16 @@ public final class MayDMZAnimationApiBridge {
                 bindings.apiType("MayDMZAnimationApi"), accessor
         );
         return service.orElse(null);
+    }
+
+    private static Optional<String> optionalCombo(String comboId) {
+        return comboId.isEmpty() ? Optional.empty() : Optional.of(comboId);
+    }
+
+    private static String assignmentStatus(Object result) {
+        return ((Enum<?>) invoke(
+                result, apiType("ComboAssignmentResult"), "status", new Class<?>[0]
+        )).name().toLowerCase(Locale.ROOT);
     }
 
     private static Object options(int band, String policy) {
