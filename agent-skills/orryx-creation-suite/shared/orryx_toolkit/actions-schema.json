@@ -2171,6 +2171,42 @@
       }
     },
     {
+      "aliases": [
+        "dmzanimation"
+      ],
+      "contexts": [
+        "generic"
+      ],
+      "danger": {
+        "classification": "not-detected",
+        "evidence": []
+      },
+      "execution": {
+        "evidence": [],
+        "thread": "any"
+      },
+      "name": "maydmz",
+      "namespace": "ORRYX_NAMESPACE",
+      "parserFactory": "scriptParser",
+      "pluginPrerequisites": [
+        {
+          "evidence": "src/main/kotlin/org/gitee/orryx/core/kether/actions/compat/maydmzanimation/MayDMZAnimationActions.kt",
+          "module": "maydmzanimation",
+          "required": true
+        }
+      ],
+      "selectorUsage": {
+        "detected": false,
+        "evidence": []
+      },
+      "shared": true,
+      "source": {
+        "function": "mayDmzAnimation",
+        "line": 16,
+        "path": "src/main/kotlin/org/gitee/orryx/core/kether/actions/compat/maydmzanimation/MayDMZAnimationActions.kt"
+      }
+    },
+    {
       "aliases": [],
       "contexts": [
         "generic"
@@ -3848,11 +3884,11 @@
   ],
   "schemaVersion": "1.0",
   "sourceRoot": "src/main/kotlin/org/gitee/orryx/core/kether",
-  "sourceSha256": "02ec86695629bb939df4e099bcaf8af1572dc05b6ec1970cceb8dddf4ac3be1a",
+  "sourceSha256": "ce4fdbc9c0adba17211e1e5e4278fdd7cd9c7f97f1a5225a65126ad1a5e1ef92",
   "summary": {
-    "actionCount": 123,
-    "aliasCount": 8,
+    "actionCount": 124,
+    "aliasCount": 9,
     "implicitVariableCount": 9,
-    "sourceFileCount": 83
+    "sourceFileCount": 84
   }
 }

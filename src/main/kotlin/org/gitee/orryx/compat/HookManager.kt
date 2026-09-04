@@ -25,5 +25,6 @@ object HookManager {
         DungeonPlusPlugin.load()
         ArcartXPlugin.load()
         CraneAttributePlugin.load()
+        MayDMZAnimationPlugin.load()
     }
 }

@@ -1,0 +1,48 @@
+Options:
+  Type: "DIRECT"
+  Name: "MayDMZAnimation JavaScript 普通播放示例"
+  ScriptEngine: "JAVASCRIPT"
+  Sort: 997
+  Icon: "MayDMZAnimation Playback JS"
+  XMaterial: "BLAZE_POWDER"
+  Description:
+    - '&f播放普通循环动画，并在 &b40 tick &f后主动结束'
+    - '&f同时演示 &bplayback play &f与 &bplayback stop'
+    - '&7需要安装并激活 MayDMZAnimation'
+  IsLocked: false
+  MinLevel: 1
+  MaxLevel: 1
+  UpgradePointAction: "js: return 1;"
+  CastCheckAction: "js: return player != null && player.isOnline();"
+  IgnoreSilence: false
+  Variables:
+    MANA: "js: return 0;"
+    COOLDOWN: "js: return 60;"
+    SILENCE: "js: return 0;"
+Actions: |-
+  function main() {
+      var CompletableFuture = Java.type("java.util.concurrent.CompletableFuture");
+      return kether.run("maydmz available").thenCompose(function(available) {
+          if (String(available) !== "true") {
+              player.sendMessage("§e[Orryx] MayDMZAnimation 当前不可用，已跳过普通动画示例。");
+              return CompletableFuture.completedFuture(false);
+          }
+
+          // duration 是故障保护上限；正常路径会在 40 tick 时执行显式 stop。
+          return kether.run('maydmz playback play "maydmz.smoke.upper_wave" mode loop speed 1.0 duration 200 transition 4.0 they @self')
+              .thenCompose(function(played) {
+                  if (String(played) === "0") {
+                      player.sendMessage("§c[Orryx] 普通动画提交失败，请检查动画 ID 与玩家资源状态。");
+                      return CompletableFuture.completedFuture(false);
+                  }
+                  player.sendMessage("§a[Orryx] 普通循环动画已播放，40 tick 后将主动结束。");
+                  return scheduler.later(function() {
+                      return kether.run('maydmz playback stop transition 4.0 they @self')
+                          .thenApply(function(stopped) {
+                              player.sendMessage("§b[Orryx] 结束动画语句已执行，停止玩家数: " + String(stopped));
+                              return String(stopped) !== "0";
+                          });
+                  }, 40);
+              });
+      });
+  }

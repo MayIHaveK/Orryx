@@ -74,10 +74,11 @@ object JavaScriptRuntime {
             )
             bindings.putAll(createBaseBindings(scope, invocation, moduleManager, variables))
             val compiled = compiled(state, script)
-            synchronized(state.engine) {
+            val scriptUnit = synchronized(state.engine) {
                 compiled.eval(bindings)
             }
-            val main = synchronized(state.engine) { state.engine.eval("__orryx_unit.main", bindings) }
+            bindings[UNIT_BINDING] = scriptUnit
+            val main = synchronized(state.engine) { state.engine.eval("$UNIT_BINDING.main", bindings) }
                 ?: error("JavaScript 脚本 ${script.id} 未定义 main 函数")
             val result = scope.invoke(main)
             completeResult(result, future, resources)
@@ -132,9 +133,13 @@ object JavaScriptRuntime {
         val key = ScriptCacheKey(script.id, script.source)
         return state.compiled.get(key) {
             val source = ensureMain(script.source)
-            val wrapped = "__orryx_unit=(function(){${source}\nreturn {main:(typeof main==='function'?main:null),onLoad:(typeof onLoad==='function'?onLoad:null),onUnload:(typeof onUnload==='function'?onUnload:null)};})();"
+            val wrapped = wrapScript(source)
             synchronized(state.engine) { (state.engine as Compilable).compile(wrapped) }
         } ?: error("JavaScript 编译缓存构建失败: ${script.id}")
+    }
+
+    internal fun wrapScript(source: String): String {
+        return "(function(){${source}\nreturn {main:(typeof main==='function'?main:null),onLoad:(typeof onLoad==='function'?onLoad:null),onUnload:(typeof onUnload==='function'?onUnload:null)};})();"
     }
 
     private fun compiledModule(state: EngineState, path: Path): CompiledScript {
@@ -174,4 +179,6 @@ object JavaScriptRuntime {
             if (throwable == null) target.complete(value) else target.completeExceptionally(throwable)
         }
     }
+
+    private const val UNIT_BINDING = "__orryx_unit"
 }

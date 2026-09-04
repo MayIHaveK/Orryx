@@ -73,9 +73,9 @@
 
 默认使用 Kether 脚本引擎，并可通过 TabooLib JavaScript 模块使用 Nashorn ES5.1。技能和中转站设置 `Options.ScriptEngine: JAVASCRIPT` 后可直接编写 JS，短字段支持 `js:` / `kether:` 覆盖，复杂脚本可放在 `plugins/Orryx/scripts/` 并通过 `ScriptFile` 引用。
 
-首次启动或重载时，缺失的内置配置会逐个补齐，不会覆盖管理员已经修改的同名文件。技能目录默认释放 `JavaScript示例.yml`、`无尽深渊-AI生成案例.yml`、`无畏护盾-AI生成案例.yml` 和 `裂焱冲击-AI生成案例.yml`；中转站目录默认释放三份与无畏护盾配套的 AI 生成案例。可使用 `/skill cast <玩家> JavaScript示例 1 false` 直接验证 JS 环境。`plugins/Orryx/stations/example.yml` 仅供阅读，默认 `Enabled: false`；旧版本已释放但没有 `Enabled` 的同名示例也默认禁用，避免监听聊天并反复输出测试值。
+首次启动或重载时，缺失的内置配置会逐个补齐，不会覆盖管理员已经修改的同名文件。技能目录默认释放 `JavaScript示例.yml`、`MayDMZAnimation-JavaScript示例.yml`、`MayDMZAnimation-JavaScript普通播放示例.yml`、`无尽深渊-AI生成案例.yml`、`无畏护盾-AI生成案例.yml` 和 `裂焱冲击-AI生成案例.yml`；中转站目录默认释放三份与无畏护盾配套的 AI 生成案例。可使用 `/skill cast <玩家> JavaScript示例 1 false` 直接验证 JS 环境；MayDMZAnimation 连点分配示例使用 `/or skill cast <玩家> MayDMZAnimation-JavaScript示例`，普通播放并在 40 tick 后显式结束的示例使用 `/or skill cast <玩家> MayDMZAnimation-JavaScript普通播放示例`。`plugins/Orryx/stations/example.yml` 仅供阅读，默认 `Enabled: false`；旧版本已释放但没有 `Enabled` 的同名示例也默认禁用，避免监听聊天并反复输出测试值。
 
-Kether 内置 **74 个动作文件**：
+Kether 内置 **75 个动作文件**：
 
 - 基础：延迟、同步、条件判断、流程控制
 - 技能：冷却管理、法力/精力操作、伤害计算
@@ -83,7 +83,7 @@ Kether 内置 **74 个动作文件**：
 - 数学：矩阵变换、四元数、向量运算
 - 选择器：几何体范围选择、目标筛选
 - 射线：光线追踪、碰撞检测
-- 兼容：Nodens 属性、AstraXHero、AttributePlus、GDDTitle、MythicMobs 等
+- 兼容：Nodens 属性、AstraXHero、AttributePlus、GDDTitle、MythicMobs、MayDMZAnimation 等
 
 #### Kether 注释
 
@@ -300,6 +300,17 @@ Editor:
 - Kether 动作 `arcartx`：动画控制（支持速度/过渡/持续时间）、音效播放、UI 打开/关闭/脚本运行、实体模型设置（支持缩放）、服务端变量管理、自定义数据包发送、屏幕震动、窗口标题
 - Glimmer 脚本集成：注册 `Orryx` 命名空间，提供 22 个静态函数（法力值/精力值/技能/状态/档案/职业操作）和 `OrryxPlayer` 对象类型（20 个实例方法）
 - 触发器 (10)：按键按下/释放、简单按键按下/释放、组合键、鼠标点击、实体加入/离开、客户端通道、自定义数据包
+
+</details>
+
+<details>
+<summary><b>MayDMZAnimation（可选）</b></summary>
+
+- 公共 API：只通过 Bukkit Services 驱动动作 ID 和句柄，不访问插件内部组合图、协议或资源实现
+- Kether 动作 `maydmz` / `dmzanimation`：分配等待输入的主动连击，或立即启动动作、发送 signal、停止/取消、查询状态和直接播放动画
+- 安全降级：未安装、尚未激活或 API 链接失败时 Orryx 仍正常加载，可用性语句返回 `false`
+- 高频调用：只缓存当前插件类加载器的公开 API 反射元数据；service 每次重新发现，且 Orryx 不增加后台轮询或网络流量
+- 详细语法与返回值见 [`docs/Client-Engine-Integration.md`](docs/Client-Engine-Integration.md)
 
 </details>
 
@@ -612,7 +623,7 @@ node scripts/validate-kether-docs.mjs build/generated-docs
 - [ZRead AI](https://zread.ai/MayIHaveK/Orryx) — AI 问答助手
 - [API 文档](docs/API.md) — 开发者 API 参考
 - [客户端协议文档](docs/Plugin-Integration.md) — OrryxMod 客户端协议
-- [客户端引擎集成](docs/Client-Engine-Integration.md) — DragonCore/GermPlugin/ArcartX 集成
+- [客户端引擎集成](docs/Client-Engine-Integration.md) — DragonCore/GermPlugin/ArcartX/MayDMZAnimation 集成
 - [实体字段文档](docs/EntityField.md) — 实体字段参考
 
 ---

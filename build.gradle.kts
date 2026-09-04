@@ -1,6 +1,7 @@
 import groovy.json.JsonSlurper
 import io.izzel.taboolib.gradle.*
 import xyz.jpenilla.runpaper.task.RunServer
+import java.util.zip.ZipFile
 
 val publishUsername: String by project
 val publishPassword: String by project
@@ -213,6 +214,7 @@ taboolib {
             name("Nodens").optional(true)
             name("CloudPick").optional(true)
             name("CraneAttribute").optional(true)
+            name("MayDMZAnimation").optional(true)
         }
     }
     relocate("com.github.benmanes.caffeine", "org.gitee.orryx.caffeine")
@@ -301,6 +303,37 @@ tasks.withType<JavaCompile> {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+val verifyMayDmzCompatIsolation = tasks.register("verifyMayDmzCompatIsolation") {
+    group = "verification"
+    description = "Verifies the optional MayDMZAnimation bridge is packaged without bundling its API."
+    dependsOn(tasks.named("jar"))
+    inputs.file(tasks.named<Jar>("jar").flatMap { it.archiveFile })
+
+    doLast {
+        val archive = tasks.named<Jar>("jar").get().archiveFile.get().asFile
+        ZipFile(archive).use { zip ->
+            val entries = buildSet {
+                val enumeration = zip.entries()
+                while (enumeration.hasMoreElements()) add(enumeration.nextElement().name)
+            }
+            val bridge = "org/gitee/orryx/compat/maydmzanimation/MayDMZAnimationApiBridge.class"
+            check(bridge in entries) { "MayDMZAnimation API bridge is missing from ${archive.name}" }
+            check(entries.none { it.startsWith("com/mayihavek/dmzanimation/api/") }) {
+                "MayDMZAnimation API classes must remain compileOnly and must not be bundled into Orryx"
+            }
+            val bytes = zip.getInputStream(zip.getEntry(bridge)).use { it.readBytes() }
+            val majorVersion = (bytes[6].toInt() and 0xff) shl 8 or (bytes[7].toInt() and 0xff)
+            check(majorVersion == 52) {
+                "Optional MayDMZAnimation bridge must remain Java 8 bytecode, found class version $majorVersion"
+            }
+        }
+    }
+}
+
+tasks.named("check") {
+    dependsOn(verifyMayDmzCompatIsolation)
 }
 
 java {

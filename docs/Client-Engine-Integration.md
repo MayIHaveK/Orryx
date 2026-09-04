@@ -1,6 +1,6 @@
 # Orryx 客户端引擎集成文档
 
-Orryx 对 DragonCore（龙之核心）、GermPlugin（萌芽引擎）、ArcartX 三个 Minecraft 客户端引擎提供兼容支持，包括触发器、Kether 动作和扩展功能。
+Orryx 对 DragonCore（龙之核心）、GermPlugin（萌芽引擎）、ArcartX 和 MayDMZAnimation 提供可选兼容支持，包括触发器、Kether 动作和扩展功能。
 
 ---
 
@@ -200,7 +200,84 @@ ArcartX 独有的 Glimmer 脚本集成，命名空间为 `Orryx`。
 
 ---
 
-## 四、功能对比
+## 四、MayDMZAnimation
+
+Orryx 通过 MayDMZAnimation 的独立公共 API 和 Bukkit Services 接入，不访问组合图编译器、执行器、
+资源传输或协议实现。`MayDMZAnimation` 是软依赖，未安装、未完成激活或 API 链接失败时 Orryx 仍可正常
+加载；`maydmz available` 返回 `false`，其他动作安全返回 `unavailable`、`false` 或 `0`。
+
+语句注册在 Orryx 命名空间，主关键字为 `maydmz`，别名为 `dmzanimation`。
+
+### 组合动作
+
+- `maydmz available`：API 服务当前是否可用。
+- `maydmz combo assign <连击ID> [they <玩家容器>]`：分配主动连击；调用时不播放，第一次物理输入才开始。
+- `maydmz combo clear [they <玩家容器>]`：清除主动连击并释放旧输入绑定。
+- `maydmz combo current [they <玩家容器>]`：查询当前分配，未分配时值为空字符串。
+- `maydmz combo exists <连击ID>`：连击目录是否包含该 ID。
+- `maydmz action exists <动作ID>`：动作目录是否包含该 ID。
+- `maydmz action start <动作ID> [priority <整数> [policy <drop|replace|force>]] [they <玩家容器>]`：立即启动动作，调用成功即播放入口节点。
+- `maydmz action signal <信号> [channel <通道>] [they <玩家容器>]`：向运行中的动作发送时间窗信号。
+- `maydmz action stop [channel <通道>] [they <玩家容器>]`：正常停止动作。
+- `maydmz action cancel <原因> [channel <通道>] [they <玩家容器>]`：以取消原因结束动作。
+- `maydmz action running [channel <通道>] [they <玩家容器>]`：返回匹配的运行中动作数量。
+
+`action start` 返回一个 `Map<玩家UUID, 结果>`。成功值为 `started` 或 `pending`；拒绝值与
+MayDMZAnimation 的 `ActionRejection` 小写名一致，例如 `unknown_action`、`no_permission`、
+`priority_busy`。未写 `priority` 时完全沿用动作 JSON 自己的仲裁规则。
+
+```text
+maydmz combo assign "maydmz:rapid_tap_demo" they @self
+maydmz action start "maydmz:skill_attack" priority 100 policy replace they @self
+maydmz action signal "hit_confirm" channel "upper_body" they @self
+maydmz action cancel "skill_interrupted" they @self
+```
+
+### 直接播放
+
+- `maydmz playback play <动画ID> [mode <once|loop|hold>] [speed <浮点>] [duration <tick>] [transition <tick>] [they <玩家容器>]`
+- `maydmz playback stop [transition <tick>] [they <玩家容器>]`
+
+直接播放适合单个动画片段；带输入窗口、连段、notify 和服务端状态的技能应使用 `action start`。
+
+JavaScript 中可以组合播放与显式结束；下面的 `stop` 会停止目标玩家当前的普通播放实例：
+
+```javascript
+return kether.run('maydmz playback play "maydmz.smoke.upper_wave" mode loop speed 1.0 duration 200 transition 4.0 they @self')
+    .thenCompose(function(played) {
+        return scheduler.later(function() {
+            return kether.run('maydmz playback stop transition 4.0 they @self');
+        }, 40);
+    });
+```
+
+### JavaScript 技能示例
+
+内置的 `skills/MayDMZAnimation-JavaScript示例.yml` 使用 `ScriptEngine: JAVASCRIPT`，从 JS 调用
+`kether.run(...)` 并返回组合后的 `CompletableFuture`，不会阻塞主线程。它先执行 `maydmz available`，可用时
+分配 `maydmz:rapid_tap_demo`，调用时不会播放动画，随后由玩家第一次及连续点击攻击键推进四段；缺失插件或
+分配被拒绝时向玩家显示安全降级结果。示例使用公开 `ComboAssignmentService`，Orryx 不接触按键协议、
+组合图解释器或资源传输内部实现。测试命令：
+
+```text
+/or skill cast <玩家名> MayDMZAnimation-JavaScript示例
+/or skill cast <玩家名> MayDMZAnimation-JavaScript普通播放示例
+```
+
+第二个示例循环播放 `maydmz.smoke.upper_wave`，40 tick 后实际执行结束动画语句并输出停止数量；`duration 200`
+只是 stop 未能执行时的安全上限。
+
+### 性能与带宽
+
+Orryx 不启动轮询任务，也不自行发送 DragonMineZ 插件消息；只有脚本实际执行上述语句时才调用
+MayDMZAnimation。Java 8 兼容桥会按当前 MayDMZAnimation 插件实例缓存公开 API 的类和方法元数据，避免高频
+技能每次重复 `Class.forName`/`getMethod`；Bukkit service provider 仍在每次调用时重新取得，因此插件延迟激活
+或重载后不会持有旧运行时。`they` 选中多名玩家时会在主线程逐名调用，批量技能应控制选择器规模；网络传输、
+资源缓存、观察者半径和客户端广播限流均由 MayDMZAnimation 自己负责。
+
+---
+
+## 五、原有客户端引擎功能对比
 
 | 功能          |  DragonCore   | GermPlugin |     ArcartX      |
 |-------------|:-------------:|:----------:|:----------------:|

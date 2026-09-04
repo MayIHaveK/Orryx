@@ -1112,6 +1112,13 @@ Orryx 通过 TabooLib JavaScript 模块加载 Nashorn。Java 8 使用 JDK 内置
 插件会在每次加载配置时补齐缺失的内置示例，但不会覆盖已有文件：
 
 - `plugins/Orryx/skills/JavaScript示例.yml`：默认启用，可执行 `/skill cast <玩家> JavaScript示例 1 false` 测试。
+- `plugins/Orryx/skills/MayDMZAnimation-JavaScript示例.yml`：用 JS 通过 `kether.run` 异步调用可选
+  MayDMZAnimation 主动连击分配服务；cast 本身不播放动画，第一次及后续点击攻击键推进四段，可执行
+  `/or skill cast <玩家> MayDMZAnimation-JavaScript示例` 测试。
+- `plugins/Orryx/skills/MayDMZAnimation-JavaScript普通播放示例.yml`：播放
+  `maydmz.smoke.upper_wave` 循环动画，并通过 `scheduler.later` 在 40 tick 后执行
+  `maydmz playback stop transition 4.0 they @self`；可执行
+  `/or skill cast <玩家> MayDMZAnimation-JavaScript普通播放示例` 同时验证播放与结束语句。
 - `plugins/Orryx/skills/无尽深渊-AI生成案例.yml`：完整的 `DIRECT AIM` JavaScript 示例，直接调用 Bukkit 粒子与实体 API，并用 `scheduler.repeat` 实现吸引、循环伤害和斩杀。
 - `plugins/Orryx/skills/裂焱冲击-AI生成案例.yml`：完整的 `DIRECT` JavaScript 示例，展示位移、药水、粒子、实体查询与路径伤害。
 - `plugins/Orryx/skills/无畏护盾-AI生成案例.yml`：与三份 JavaScript 中转站配套的 `PASSIVE` 示例，技能本体负责等级与变量计算。

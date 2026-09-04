@@ -1,0 +1,43 @@
+Options:
+  Type: "DIRECT"
+  Name: "MayDMZAnimation JavaScript 示例"
+  ScriptEngine: "JAVASCRIPT"
+  Sort: 998
+  Icon: "MayDMZAnimation JS"
+  XMaterial: "BLAZE_ROD"
+  Description:
+    - '&f用 JavaScript 异步调用 Orryx Kether 桥'
+    - '&f启用等待点击的 &bmaydmz:rapid_tap_demo'
+    - '&7需要安装并激活 MayDMZAnimation'
+  IsLocked: false
+  MinLevel: 1
+  MaxLevel: 1
+  UpgradePointAction: "js: return 1;"
+  CastCheckAction: "js: return player != null && player.isOnline();"
+  IgnoreSilence: false
+  Variables:
+    MANA: "js: return 0;"
+    COOLDOWN: "js: return 20;"
+    SILENCE: "js: return 0;"
+Actions: |-
+  function main() {
+      var CompletableFuture = Java.type("java.util.concurrent.CompletableFuture");
+      return kether.run("maydmz available").thenCompose(function(available) {
+          if (String(available) !== "true") {
+              player.sendMessage("§e[Orryx] MayDMZAnimation 当前不可用，已安全跳过动作。");
+              return CompletableFuture.completedFuture(false);
+          }
+          return kether.run('maydmz combo assign "maydmz:rapid_tap_demo" they @self')
+              .thenApply(function(results) {
+                  var outcome = results == null
+                      ? "unknown"
+                      : String(results.get(player.getUniqueId().toString()));
+                  if (outcome === "assigned" || outcome === "unchanged") {
+                      player.sendMessage("§a[Orryx] 连点动作已启用；现在第一次点击才会开始动画: " + outcome);
+                      return true;
+                  }
+                  player.sendMessage("§c[Orryx] 连点动作未启用: " + outcome);
+                  return false;
+              });
+      });
+  }

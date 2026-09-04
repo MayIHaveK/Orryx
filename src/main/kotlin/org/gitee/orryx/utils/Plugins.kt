@@ -64,3 +64,5 @@ val DungeonPlusPlugin = Plugin("DungeonPlus") {
 val CloudPickPlugin = Plugin("CloudPick")
 
 val CraneAttributePlugin = Plugin("CraneAttribute")
+
+val MayDMZAnimationPlugin = Plugin("MayDMZAnimation")
