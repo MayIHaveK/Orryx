@@ -18,8 +18,13 @@ class JavaScriptEnvironmentTest {
         ).bufferedReader(Charsets.UTF_8).use { it.readText() }
 
         assertTrue(sample.contains("maydmz combo assign"))
+        assertTrue(sample.contains("maydmz combo current"))
+        assertTrue(sample.contains("maydmz combo clear"))
         assertTrue(sample.contains("第一次点击才会开始动画"))
         assertTrue(!sample.contains("maydmz action start"))
+        JavaScriptRuntime.validate(
+            JavaScriptCompiledScript("maydmz-combo-example", actionSource(sample)),
+        )
     }
 
     @Test
@@ -30,8 +35,8 @@ class JavaScriptEnvironmentTest {
             ),
         ).bufferedReader(Charsets.UTF_8).use { it.readText() }
 
-        assertTrue(sample.contains("maydmz playback play"))
-        assertTrue(sample.contains("maydmz playback stop transition 4.0"))
+        assertTrue(sample.contains("maydmz playback play-handle"))
+        assertTrue(sample.contains("maydmz playback stop-instance"))
         assertTrue(sample.contains("scheduler.later"))
         JavaScriptRuntime.validate(
             JavaScriptCompiledScript("maydmz-playback-example", actionSource(sample)),
@@ -45,8 +50,12 @@ class JavaScriptEnvironmentTest {
         ).bufferedReader(Charsets.UTF_8).use { it.readText() }
 
         assertTrue(sample.contains("maydmzparticle play \"dmz:example_bone_sparks\""))
+        assertTrue(sample.contains("bone \"socket:right_hand\""))
+        assertTrue(sample.contains("bone \"bone:right_arm2\""))
+        assertTrue(sample.contains("bone \"locator:right_hand_item/locator3\""))
         assertTrue(sample.contains("maydmzparticle play-at \"dmz:example_burst\""))
-        assertTrue(sample.contains("maydmzparticle stop \"' + handle + '\""))
+        assertTrue(sample.contains("maydmzparticle stop \"' + locatorHandle + '\""))
+        assertTrue(sample.contains("maydmzparticle stop-entity"))
         JavaScriptRuntime.validate(
             JavaScriptCompiledScript("maydmz-particle-example", actionSource(sample)),
         )

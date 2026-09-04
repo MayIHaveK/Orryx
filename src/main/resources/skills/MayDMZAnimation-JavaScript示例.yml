@@ -8,6 +8,7 @@ Options:
   Description:
     - '&f用 JavaScript 异步调用 Orryx Kether 桥'
     - '&f启用等待点击的 &bmaydmz:rapid_tap_demo'
+    - '&f仅在本示例改动分配时，&b200 tick &f后安全恢复原设置'
     - '&7需要安装并激活 MayDMZAnimation'
   IsLocked: false
   MinLevel: 1
@@ -20,6 +21,30 @@ Options:
     COOLDOWN: "js: return 20;"
     SILENCE: "js: return 0;"
 Actions: |-
+  var DEMO_COMBO = "maydmz:rapid_tap_demo";
+
+  function resultForSelf(values) {
+      if (values == null) return "";
+      var value = values.get(player.getUniqueId().toString());
+      return value == null ? "" : String(value);
+  }
+
+  function restoreIfStillOwned(previousCombo) {
+      var CompletableFuture = Java.type("java.util.concurrent.CompletableFuture");
+      return kether.run("maydmz combo current they @self").thenCompose(function(current) {
+          if (resultForSelf(current) !== DEMO_COMBO) {
+              return CompletableFuture.completedFuture(false);
+          }
+          var command = previousCombo.length === 0
+              ? "maydmz combo clear they @self"
+              : 'maydmz combo assign "' + previousCombo + '" they @self';
+          return kether.run(command).thenApply(function(restored) {
+              player.sendMessage("§7[Orryx] 连点示例已结束，原连招分配已恢复。");
+              return true;
+          });
+      });
+  }
+
   function main() {
       var CompletableFuture = Java.type("java.util.concurrent.CompletableFuture");
       return kether.run("maydmz available").thenCompose(function(available) {
@@ -27,17 +52,25 @@ Actions: |-
               player.sendMessage("§e[Orryx] MayDMZAnimation 当前不可用，已安全跳过动作。");
               return CompletableFuture.completedFuture(false);
           }
-          return kether.run('maydmz combo assign "maydmz:rapid_tap_demo" they @self')
-              .thenApply(function(results) {
-                  var outcome = results == null
-                      ? "unknown"
-                      : String(results.get(player.getUniqueId().toString()));
-                  if (outcome === "assigned" || outcome === "unchanged") {
+          return kether.run("maydmz combo current they @self").thenCompose(function(current) {
+              var previousCombo = resultForSelf(current);
+              return kether.run('maydmz combo assign "' + DEMO_COMBO + '" they @self')
+                  .thenCompose(function(results) {
+                      var outcome = resultForSelf(results);
+                      if (outcome !== "assigned" && outcome !== "unchanged") {
+                          player.sendMessage("§c[Orryx] 连点动作未启用: " + outcome);
+                          return CompletableFuture.completedFuture(false);
+                      }
                       player.sendMessage("§a[Orryx] 连点动作已启用；现在第一次点击才会开始动画: " + outcome);
-                      return true;
-                  }
-                  player.sendMessage("§c[Orryx] 连点动作未启用: " + outcome);
-                  return false;
+                      if (outcome === "unchanged") {
+                          return CompletableFuture.completedFuture(true);
+                      }
+                      return scheduler.later(function() {
+                          return restoreIfStillOwned(previousCombo);
+                      }, 200).thenApply(function() {
+                          return true;
+                      });
+                  });
               });
       });
   }

@@ -237,17 +237,23 @@ maydmz action cancel "skill_interrupted" they @self
 ### 直接播放
 
 - `maydmz playback play <动画ID> [mode <once|loop|hold>] [speed <浮点>] [duration <tick>] [transition <tick>] [they <玩家容器>]`
+- `maydmz playback play-handle <动画ID> [mode <once|loop|hold>] [speed <浮点>] [duration <tick>] [transition <tick>] [they <玩家容器>]`
 - `maydmz playback stop [transition <tick>] [they <玩家容器>]`
+- `maydmz playback stop-instance <实例号> [transition <tick>]`
 
+`play` 保持兼容，返回成功提交的玩家数量；`play-handle` 返回
+`Map<玩家UUID字符串, 播放实例号Long>`，可交给 `stop-instance` 精确结束这一段播放而不干扰同一玩家的
+其他通道。按玩家 `stop` 会结束该玩家由直接播放 API 跟踪的普通实例，不接管 Combo 所有的通道。
 直接播放适合单个动画片段；带输入窗口、连段、notify 和服务端状态的技能应使用 `action start`。
 
 JavaScript 中可以组合播放与显式结束；下面的 `stop` 会停止目标玩家当前的普通播放实例：
 
 ```javascript
-return kether.run('maydmz playback play "maydmz.smoke.upper_wave" mode loop speed 1.0 duration 200 transition 4.0 they @self')
-    .thenCompose(function(played) {
+return kether.run('maydmz playback play-handle "maydmz.smoke.upper_wave" mode loop speed 1.0 duration 200 transition 4.0 they @self')
+    .thenCompose(function(handles) {
+        var instance = handles.get(player.getUniqueId().toString());
         return scheduler.later(function() {
-            return kether.run('maydmz playback stop transition 4.0 they @self');
+            return kether.run('maydmz playback stop-instance ' + String(instance) + ' transition 4.0');
         }, 40);
     });
 ```
@@ -256,8 +262,9 @@ return kether.run('maydmz playback play "maydmz.smoke.upper_wave" mode loop spee
 
 内置的 `skills/MayDMZAnimation-JavaScript示例.yml` 使用 `ScriptEngine: JAVASCRIPT`，从 JS 调用
 `kether.run(...)` 并返回组合后的 `CompletableFuture`，不会阻塞主线程。它先执行 `maydmz available`，可用时
-分配 `maydmz:rapid_tap_demo`，调用时不会播放动画，随后由玩家第一次及连续点击攻击键推进四段；缺失插件或
-分配被拒绝时向玩家显示安全降级结果。示例使用公开 `ComboAssignmentService`，Orryx 不接触按键协议、
+分配 `maydmz:rapid_tap_demo`，调用时不会播放动画，随后由玩家第一次及连续点击攻击键推进四段；只有本示例
+实际改变了分配时，才会在 200 tick 后比较当前值并安全恢复此前分配，避免覆盖玩家或其他插件稍后作出的修改。
+缺失插件或分配被拒绝时向玩家显示安全降级结果。示例使用公开 `ComboAssignmentService`，Orryx 不接触按键协议、
 组合图解释器或资源传输内部实现。测试命令：
 
 ```text
@@ -265,16 +272,17 @@ return kether.run('maydmz playback play "maydmz.smoke.upper_wave" mode loop spee
 /or skill cast <玩家名> MayDMZAnimation-JavaScript普通播放示例
 ```
 
-第二个示例循环播放 `maydmz.smoke.upper_wave`，40 tick 后实际执行结束动画语句并输出停止数量；`duration 200`
-只是 stop 未能执行时的安全上限。
+第二个示例循环播放 `maydmz.smoke.upper_wave`，保存 `play-handle` 返回的实例号，40 tick 后用
+`stop-instance` 精确结束并输出结果；`duration 200` 只是停止语句未能执行时的安全上限。
 
 ### 性能与带宽
 
 Orryx 不启动轮询任务，也不自行发送 DragonMineZ 插件消息；只有脚本实际执行上述语句时才调用
-MayDMZAnimation。Java 8 兼容桥会按当前 MayDMZAnimation 插件实例缓存公开 API 的类和方法元数据，避免高频
-技能每次重复 `Class.forName`/`getMethod`；Bukkit service provider 仍在每次调用时重新取得，因此插件延迟激活
-或重载后不会持有旧运行时。`they` 选中多名玩家时会在主线程逐名调用，批量技能应控制选择器规模；网络传输、
-资源缓存、观察者半径和客户端广播限流均由 MayDMZAnimation 自己负责。
+MayDMZAnimation。Java 8 兼容桥只在公开 `api` 接口上解析方法并按当前插件实例缓存元数据，不反射混淆后的
+provider 实现类；Bukkit service provider 仍在每次调用时重新取得，因此插件延迟激活或重载后不会持有旧运行时。
+连招按键采样、图遍历和本机播放由 DragonMineZ 客户端即时决定；服务端仅校验当前分配与批次内容，并给旁观者
+转发时使用自己的顺序号。`they` 选中多名玩家时会在主线程逐名调用，批量技能应控制选择器规模；资源传输、
+观察者半径和广播限流均由 MayDMZAnimation 自己负责。
 
 ---
 
@@ -304,12 +312,15 @@ maydmzparticle play-at <效果ID> [duration <tick>]
 ```
 
 `play` 把效果附着到目标玩家；`bone` 为空时使用实体根，推荐跨模型使用
-`socket:right_hand` 等语义 socket。`play-at` 会在每名目标玩家执行语句时的当前位置建立固定世界锚点，
+`socket:right_hand` 等语义 socket。原始骨骼可写 `bone:right_arm2`，精确模型定位器可写
+`locator:right_hand_item/locator3`。`play-at` 会在每名目标玩家执行语句时的当前位置建立固定世界锚点，
 随后不会跟随玩家移动。`duration 0` 表示由效果自身或显式停止决定。两者都返回
 `Map<玩家UUID字符串, 播放句柄UUID字符串>`；提交失败时对应值为空字符串。
 
 ```text
 maydmzparticle play "dmz:example_bone_sparks" bone "socket:right_hand" duration 100 offset "0,-0.15,0" rotation "0,0,25" scale "1.2,1.2,1.2" they @self
+maydmzparticle play "dmz:example_bone_sparks" bone "bone:right_arm2" duration 100 they @self
+maydmzparticle play "dmz:example_bone_sparks" bone "locator:right_hand_item/locator3" duration 100 they @self
 maydmzparticle play-at "dmz:example_burst" duration 60 scale "1.3,1.3,1.3" they @self
 ```
 
@@ -322,8 +333,9 @@ maydmzparticle play-at "dmz:example_burst" duration 60 scale "1.3,1.3,1.3" they 
 ### JavaScript 技能示例
 
 内置 `skills/MayDMZParticle-JavaScript示例.yml` 是 Nashorn ES5.1 示例。它用
-`kether.run(...)` 检查可用性，在右手播放持续粒子，同时在当前世界位置播放爆发粒子；随后从播放结果
-Map 中读取当前玩家的句柄，并通过 `scheduler.later` 在 40 tick 后执行显式停止。测试命令：
+`kether.run(...)` 检查可用性，依次验证实体根、`socket:right_hand`、`bone:right_arm2`、
+`locator:right_hand_item/locator3` 和固定世界位置五类锚点，并覆盖 offset/rotation/scale。随后从播放结果
+Map 读取句柄，依次执行 locator 句柄停止、世界句柄停止与 `stop-entity` 清理。测试命令：
 
 ```text
 /or skill cast <玩家名> MayDMZParticle-JavaScript示例
@@ -333,9 +345,10 @@ Map 中读取当前玩家的句柄，并通过 `scheduler.later` 在 40 tick 后
 
 ### 性能、带宽与权限边界
 
-Orryx 不轮询 MayDMZParticle，不复制粒子资源，也不自行发送 DragonMineZ 插件消息。Java 8 兼容桥只按
-当前插件实例缓存公共 API 的类、构造器和方法元数据；实际 service 每次重新发现，因此延迟激活或重载
-不会长期持有旧 provider。MayDMZParticle 只发送内容哈希资源和效果级 PLAY/STOP，逐粒子模拟留在客户端；
+Orryx 不轮询 MayDMZParticle，不复制粒子资源，也不自行发送 DragonMineZ 插件消息。Java 8 兼容桥只在
+`ParticlePlaybackService` 等公共 API 类型上解析并缓存方法元数据；实际 service 每次重新发现，因此延迟激活
+或重载不会长期持有旧 provider。MayDMZParticle 只发送内容哈希资源和效果级 PLAY/STOP，发射器推进、逐粒子
+模拟、骨骼/socket/locator 最终姿态跟随和渲染全部留在客户端；
 Orryx 的伤害、冷却和命中仍必须由服务端技能逻辑判定，不能把客户端粒子当作玩法权威状态。
 
 ---

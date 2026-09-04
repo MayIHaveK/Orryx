@@ -7,7 +7,8 @@ Options:
   XMaterial: "BLAZE_POWDER"
   Description:
     - '&f播放普通循环动画，并在 &b40 tick &f后主动结束'
-    - '&f同时演示 &bplayback play &f与 &bplayback stop'
+    - '&f演示返回实例号的 &bplay-handle &f与精确 &bstop-instance'
+    - '&f按玩家批量结束仍可使用 &bplayback stop'
     - '&7需要安装并激活 MayDMZAnimation'
   IsLocked: false
   MinLevel: 1
@@ -20,6 +21,11 @@ Options:
     COOLDOWN: "js: return 60;"
     SILENCE: "js: return 0;"
 Actions: |-
+  function resultForSelf(values) {
+      if (values == null) return null;
+      return values.get(player.getUniqueId().toString());
+  }
+
   function main() {
       var CompletableFuture = Java.type("java.util.concurrent.CompletableFuture");
       return kether.run("maydmz available").thenCompose(function(available) {
@@ -29,18 +35,19 @@ Actions: |-
           }
 
           // duration 是故障保护上限；正常路径会在 40 tick 时执行显式 stop。
-          return kether.run('maydmz playback play "maydmz.smoke.upper_wave" mode loop speed 1.0 duration 200 transition 4.0 they @self')
-              .thenCompose(function(played) {
-                  if (String(played) === "0") {
+          return kether.run('maydmz playback play-handle "maydmz.smoke.upper_wave" mode loop speed 1.0 duration 200 transition 4.0 they @self')
+              .thenCompose(function(handles) {
+                  var instance = resultForSelf(handles);
+                  if (instance == null || String(instance) === '0') {
                       player.sendMessage("§c[Orryx] 普通动画提交失败，请检查动画 ID 与玩家资源状态。");
                       return CompletableFuture.completedFuture(false);
                   }
-                  player.sendMessage("§a[Orryx] 普通循环动画已播放，40 tick 后将主动结束。");
+                  player.sendMessage("§a[Orryx] 普通循环动画已播放，实例号 " + String(instance) + "，40 tick 后精确结束。");
                   return scheduler.later(function() {
-                      return kether.run('maydmz playback stop transition 4.0 they @self')
+                      return kether.run('maydmz playback stop-instance ' + String(instance) + ' transition 4.0')
                           .thenApply(function(stopped) {
-                              player.sendMessage("§b[Orryx] 结束动画语句已执行，停止玩家数: " + String(stopped));
-                              return String(stopped) !== "0";
+                              player.sendMessage("§b[Orryx] 精确结束动画结果: " + String(stopped));
+                              return String(stopped) === "true";
                           });
                   }, 40);
               });

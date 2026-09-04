@@ -1089,6 +1089,24 @@ Kether 是 Orryx 的主要脚本引擎，提供 40+ 内置动作。
 - **选择器动作**：几何体范围选择、目标筛选
 - **射线动作**：光线追踪、碰撞检测
 
+#### MayDMZAnimation 可选语句
+
+安装并激活 MayDMZAnimation 后可使用 `maydmz`（别名 `dmzanimation`）。输入连招与普通播放是两套独立生命周期：
+
+```text
+maydmz combo assign "maydmz:rapid_tap_demo" they @self
+maydmz combo current they @self
+maydmz combo clear they @self
+maydmz playback play "maydmz.smoke.upper_wave" mode loop duration 200 they @self
+maydmz playback play-handle "maydmz.smoke.upper_wave" mode loop duration 200 they @self
+maydmz playback stop transition 4.0 they @self
+maydmz playback stop-instance <播放实例号> transition 4.0
+```
+
+`combo assign` 只选择由客户端物理输入驱动的连招，调用本身不播放动作。`play` 保持原有成功玩家计数返回值；
+`play-handle` 返回玩家 UUID 到 `Long` 实例号的 Map，适合稍后用 `stop-instance` 精确结束。
+Orryx 只在 MayDMZAnimation 的公开 API 接口上解析方法，不反射混淆后的 provider 实现，也不链接 Mod 协议类。
+
 #### MayDMZParticle 可选语句
 
 安装并激活 MayDMZParticle 后可使用 `maydmzparticle`（别名 `dmzparticle`）：
@@ -1133,15 +1151,15 @@ Orryx 通过 TabooLib JavaScript 模块加载 Nashorn。Java 8 使用 JDK 内置
 
 - `plugins/Orryx/skills/JavaScript示例.yml`：默认启用，可执行 `/skill cast <玩家> JavaScript示例 1 false` 测试。
 - `plugins/Orryx/skills/MayDMZAnimation-JavaScript示例.yml`：用 JS 通过 `kether.run` 异步调用可选
-  MayDMZAnimation 主动连击分配服务；cast 本身不播放动画，第一次及后续点击攻击键推进四段，可执行
-  `/or skill cast <玩家> MayDMZAnimation-JavaScript示例` 测试。
+  MayDMZAnimation 主动连击分配服务；cast 本身不播放动画，第一次及后续点击攻击键推进四段。本示例仅在
+  自己改变分配后延迟恢复旧值，可执行 `/or skill cast <玩家> MayDMZAnimation-JavaScript示例` 测试。
 - `plugins/Orryx/skills/MayDMZAnimation-JavaScript普通播放示例.yml`：播放
-  `maydmz.smoke.upper_wave` 循环动画，并通过 `scheduler.later` 在 40 tick 后执行
-  `maydmz playback stop transition 4.0 they @self`；可执行
+  `maydmz.smoke.upper_wave` 循环动画，保存 `play-handle` 返回的实例号，并通过 `scheduler.later` 在 40 tick 后执行
+  `maydmz playback stop-instance <实例号> transition 4.0`；可执行
   `/or skill cast <玩家> MayDMZAnimation-JavaScript普通播放示例` 同时验证播放与结束语句。
-- `plugins/Orryx/skills/MayDMZParticle-JavaScript示例.yml`：先检查可选 API，再在右手播放跟随粒子、
-  在玩家当前位置播放一次世界粒子，并保存返回句柄；40 tick 后执行
-  `maydmzparticle stop "<句柄UUID>"` 显式停止。安装 MayDMZParticle 后可执行
+- `plugins/Orryx/skills/MayDMZParticle-JavaScript示例.yml`：先检查可选 API，再验证实体根、语义 socket、
+  原始骨骼 `bone:right_arm2`、精确定位器 `locator:right_hand_item/locator3`、世界锚点与 TRS；随后按句柄
+  停止 locator/世界实例并用 `stop-entity` 清理其余实例。安装 MayDMZParticle 后可执行
   `/or skill cast <玩家> MayDMZParticle-JavaScript示例`。
 - `plugins/Orryx/skills/无尽深渊-AI生成案例.yml`：完整的 `DIRECT AIM` JavaScript 示例，直接调用 Bukkit 粒子与实体 API，并用 `scheduler.repeat` 实现吸引、循环伤害和斩杀。
 - `plugins/Orryx/skills/裂焱冲击-AI生成案例.yml`：完整的 `DIRECT` JavaScript 示例，展示位移、药水、粒子、实体查询与路径伤害。

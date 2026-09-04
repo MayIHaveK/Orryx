@@ -66,12 +66,16 @@ object MayDMZAnimationCompat {
         speed: Float,
         duration: Int,
         transition: Float,
-    ): Boolean {
+    ): Long {
         return guarded.invoke { it.play(player, animation, mode, speed, duration, transition) }
     }
 
     fun stopPlayback(player: Player, transition: Float): Boolean {
         return guarded.invoke { it.stopPlayback(player, transition) }
+    }
+
+    fun stopPlaybackInstance(instanceId: Long, transition: Float): Boolean {
+        return guarded.invoke { it.stopPlaybackInstance(instanceId, transition) }
     }
 
     internal interface Bridge {
@@ -93,8 +97,9 @@ object MayDMZAnimationCompat {
             speed: Float,
             duration: Int,
             transition: Float,
-        ): Boolean
+        ): Long
         fun stopPlayback(player: Player, transition: Float): Boolean
+        fun stopPlaybackInstance(instanceId: Long, transition: Float): Boolean
     }
 
     private object UnavailableBridge : Bridge {
@@ -116,8 +121,9 @@ object MayDMZAnimationCompat {
             speed: Float,
             duration: Int,
             transition: Float,
-        ) = false
+        ) = 0L
         override fun stopPlayback(player: Player, transition: Float) = false
+        override fun stopPlaybackInstance(instanceId: Long, transition: Float) = false
     }
 
     private object ApiBridge : Bridge {
@@ -148,5 +154,7 @@ object MayDMZAnimationCompat {
         ) = MayDMZAnimationApiBridge.play(player, animation, mode, speed, duration, transition)
         override fun stopPlayback(player: Player, transition: Float) =
             MayDMZAnimationApiBridge.stopPlayback(player, transition)
+        override fun stopPlaybackInstance(instanceId: Long, transition: Float) =
+            MayDMZAnimationApiBridge.stopPlaybackInstance(instanceId, transition)
     }
 }

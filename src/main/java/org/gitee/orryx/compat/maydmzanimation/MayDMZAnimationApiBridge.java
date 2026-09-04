@@ -39,12 +39,15 @@ public final class MayDMZAnimationApiBridge {
         if (service == null) return "unavailable";
         Object result = invoke(
                 service,
+                apiType("ComboAssignmentService"),
                 "assign",
                 new Class<?>[]{Player.class, String.class},
                 player,
                 comboId
         );
-        return ((Enum<?>) invoke(result, "status")).name().toLowerCase(Locale.ROOT);
+        return ((Enum<?>) invoke(
+                result, apiType("ComboAssignmentResult"), "status", new Class<?>[0]
+        )).name().toLowerCase(Locale.ROOT);
     }
 
     public static String clearCombo(Player player) {
@@ -52,11 +55,14 @@ public final class MayDMZAnimationApiBridge {
         if (service == null) return "unavailable";
         Object result = invoke(
                 service,
+                apiType("ComboAssignmentService"),
                 "clear",
                 new Class<?>[]{Player.class},
                 player
         );
-        return ((Enum<?>) invoke(result, "status")).name().toLowerCase(Locale.ROOT);
+        return ((Enum<?>) invoke(
+                result, apiType("ComboAssignmentResult"), "status", new Class<?>[0]
+        )).name().toLowerCase(Locale.ROOT);
     }
 
     public static String assignedCombo(Player player) {
@@ -64,6 +70,7 @@ public final class MayDMZAnimationApiBridge {
         if (service == null) return null;
         Optional<?> assigned = (Optional<?>) invoke(
                 service,
+                apiType("ComboAssignmentService"),
                 "assigned",
                 new Class<?>[]{Player.class},
                 player
@@ -73,7 +80,9 @@ public final class MayDMZAnimationApiBridge {
 
     public static boolean comboExists(String comboId) {
         Object service = service("combos");
-        return service != null && ((Set<?>) invoke(service, "comboIds")).contains(comboId);
+        return service != null && ((Set<?>) invoke(
+                service, apiType("ComboAssignmentService"), "comboIds", new Class<?>[0]
+        )).contains(comboId);
     }
 
     public static String start(Player player, String actionId, Integer band, String policy) {
@@ -84,14 +93,19 @@ public final class MayDMZAnimationApiBridge {
         Object options = band == null ? invokeStatic(optionsType, "defaults") : options(band, policy);
         Object result = invoke(
                 service,
+                apiType("ActionFlowService"),
                 "start",
                 new Class<?>[]{Player.class, String.class, optionsType},
                 player,
                 actionId,
                 options
         );
-        Optional<?> rejection = (Optional<?>) invoke(result, "rejection");
-        Object outcome = rejection.isPresent() ? rejection.get() : invoke(result, "status");
+        Class<?> resultType = apiType("ActionStartResult");
+        Optional<?> rejection = (Optional<?>) invoke(
+                result, resultType, "rejection", new Class<?>[0]
+        );
+        Object outcome = rejection.isPresent() ? rejection.get()
+                : invoke(result, resultType, "status", new Class<?>[0]);
         return ((Enum<?>) outcome).name().toLowerCase(Locale.ROOT);
     }
 
@@ -101,7 +115,10 @@ public final class MayDMZAnimationApiBridge {
         boolean accepted = false;
         for (Object handle : active(service, player)) {
             if (matches(handle, channel)) {
-                accepted |= (Boolean) invoke(handle, "signal", new Class<?>[]{String.class}, value);
+                accepted |= (Boolean) invoke(
+                        handle, apiType("ActionHandle"), "signal",
+                        new Class<?>[]{String.class}, value
+                );
             }
         }
         return accepted;
@@ -112,7 +129,9 @@ public final class MayDMZAnimationApiBridge {
         if (service == null) return 0;
         int count = 0;
         for (Object handle : active(service, player)) {
-            if (matches(handle, channel) && (Boolean) invoke(handle, "stop")) count++;
+            if (matches(handle, channel) && (Boolean) invoke(
+                    handle, apiType("ActionHandle"), "stop", new Class<?>[0]
+            )) count++;
         }
         return count;
     }
@@ -123,7 +142,9 @@ public final class MayDMZAnimationApiBridge {
         int count = 0;
         for (Object handle : active(service, player)) {
             if (matches(handle, channel)
-                    && (Boolean) invoke(handle, "cancel", new Class<?>[]{String.class}, reason)) {
+                    && (Boolean) invoke(
+                    handle, apiType("ActionHandle"), "cancel",
+                    new Class<?>[]{String.class}, reason)) {
                 count++;
             }
         }
@@ -143,10 +164,12 @@ public final class MayDMZAnimationApiBridge {
     public static boolean actionExists(String actionId) {
         Object service = service("actions");
         if (service == null) return false;
-        return ((Set<?>) invoke(service, "actionIds")).contains(actionId);
+        return ((Set<?>) invoke(
+                service, apiType("ActionFlowService"), "actionIds", new Class<?>[0]
+        )).contains(actionId);
     }
 
-    public static boolean play(
+    public static long play(
             Player player,
             String animation,
             String mode,
@@ -155,7 +178,7 @@ public final class MayDMZAnimationApiBridge {
             float transition
     ) {
         Object service = service("playback");
-        if (service == null) return false;
+        if (service == null) return 0L;
         Class<?> modeType = apiType("PlaybackMode");
         Object playbackMode = invokeStatic(
                 modeType,
@@ -163,8 +186,9 @@ public final class MayDMZAnimationApiBridge {
                 new Class<?>[]{String.class},
                 mode
         );
-        invoke(
+        Object instanceId = invoke(
                 service,
+                apiType("AnimationPlaybackService"),
                 "play",
                 new Class<?>[]{
                         Player.class, String.class, modeType,
@@ -177,18 +201,28 @@ public final class MayDMZAnimationApiBridge {
                 duration,
                 transition
         );
-        return true;
+        return ((Number) instanceId).longValue();
     }
 
     public static boolean stopPlayback(Player player, float transition) {
         Object service = service("playback");
         return service != null && (Boolean) invoke(
                 service,
+                apiType("AnimationPlaybackService"),
                 "stop",
                 new Class<?>[]{Player.class, float.class},
                 player,
                 transition
         );
+    }
+
+    public static boolean stopPlaybackInstance(long instanceId, float transition) {
+        Object service = service("playback");
+        if (service == null || instanceId <= 0L) return false;
+        return invokeOptional(
+                service, apiType("AnimationPlaybackService"), "stop",
+                new Class<?>[]{long.class, float.class}, instanceId, transition
+        ).filter(Boolean.class::isInstance).map(Boolean.class::cast).orElse(false);
     }
 
     private static Object service(String accessor) {
@@ -217,22 +251,29 @@ public final class MayDMZAnimationApiBridge {
         Object priority = invokeStatic(priorityType, factory, new Class<?>[]{int.class}, band);
         Class<?> optionsType = apiType("ActionStartOptions");
         Object builder = invokeStatic(optionsType, "builder");
-        invoke(builder, "priority", new Class<?>[]{priorityType}, priority);
+        Class<?> builderType = apiType("ActionStartOptions$Builder");
+        invoke(builder, builderType, "priority", new Class<?>[]{priorityType}, priority);
         invoke(
                 builder,
+                builderType,
                 "owner",
                 new Class<?>[]{Plugin.class},
                 Bukkit.getPluginManager().getPlugin("Orryx")
         );
-        return invoke(builder, "build");
+        return invoke(builder, builderType, "build", new Class<?>[0]);
     }
 
     private static List<?> active(Object service, Player player) {
-        return (List<?>) invoke(service, "active", new Class<?>[]{Player.class}, player);
+        return (List<?>) invoke(
+                service, apiType("ActionFlowService"), "active",
+                new Class<?>[]{Player.class}, player
+        );
     }
 
     private static boolean matches(Object handle, String channel) {
-        return channel == null || channel.equals(invoke(handle, "channel"));
+        return channel == null || channel.equals(invoke(
+                handle, apiType("ActionHandle"), "channel", new Class<?>[0]
+        ));
     }
 
     private static Class<?> apiType(String simpleName) {
@@ -254,19 +295,6 @@ public final class MayDMZAnimationApiBridge {
             Object... arguments
     ) {
         return invoke(null, owner, name, parameterTypes, arguments);
-    }
-
-    private static Object invoke(Object target, String name, Object... arguments) {
-        return invoke(target, target.getClass(), name, new Class<?>[0], arguments);
-    }
-
-    private static Object invoke(
-            Object target,
-            String name,
-            Class<?>[] parameterTypes,
-            Object... arguments
-    ) {
-        return invoke(target, target.getClass(), name, parameterTypes, arguments);
     }
 
     private static Object invoke(
@@ -293,10 +321,44 @@ public final class MayDMZAnimationApiBridge {
         }
     }
 
+    /** A missing newly-added API method is an unsupported capability, not a broken provider. */
+    private static Optional<Object> invokeOptional(
+            Object target,
+            Class<?> owner,
+            String name,
+            Class<?>[] parameterTypes,
+            Object... arguments
+    ) {
+        try {
+            ReflectionBindings bindings = bindingsOrNull();
+            if (bindings == null) return Optional.empty();
+            Method method = bindings.optionalMethod(owner, name, parameterTypes);
+            if (method == null) return Optional.empty();
+            return Optional.ofNullable(method.invoke(target, arguments));
+        } catch (InvocationTargetException error) {
+            Throwable cause = error.getCause();
+            if (cause instanceof RuntimeException) throw (RuntimeException) cause;
+            if (cause instanceof Error) throw (Error) cause;
+            throw linkage("MayDMZAnimation API call failed: " + owner.getName() + '#' + name, cause);
+        } catch (IllegalAccessException error) {
+            throw linkage("Incompatible MayDMZAnimation API: " + owner.getName() + '#' + name, error);
+        }
+    }
+
     private static LinkageError linkage(String message, Throwable cause) {
         LinkageError error = new LinkageError(message);
         if (cause != null) error.initCause(cause);
         return error;
+    }
+
+    static Method findOptionalPublicMethod(
+            Class<?> owner, String name, Class<?>[] parameterTypes
+    ) {
+        try {
+            return owner.getMethod(name, parameterTypes);
+        } catch (NoSuchMethodException error) {
+            return null;
+        }
     }
 
     private static ReflectionBindings bindingsOrNull() {
@@ -320,6 +382,7 @@ public final class MayDMZAnimationApiBridge {
         private final ClassLoader classLoader;
         private final Map<String, Class<?>> apiTypes = new ConcurrentHashMap<>();
         private final Map<MethodKey, Method> methods = new ConcurrentHashMap<>();
+        private final Set<MethodKey> missingOptionalMethods = ConcurrentHashMap.newKeySet();
 
         private ReflectionBindings(Plugin plugin) {
             this.plugin = plugin;
@@ -350,6 +413,20 @@ public final class MayDMZAnimationApiBridge {
                 throw linkage("Incompatible MayDMZAnimation API: "
                         + owner.getName() + '#' + name, error);
             }
+        }
+
+        private Method optionalMethod(Class<?> owner, String name, Class<?>[] parameterTypes) {
+            MethodKey key = new MethodKey(owner, name, parameterTypes);
+            Method cached = methods.get(key);
+            if (cached != null) return cached;
+            if (missingOptionalMethods.contains(key)) return null;
+            Method resolved = findOptionalPublicMethod(owner, name, parameterTypes);
+            if (resolved == null) {
+                missingOptionalMethods.add(key);
+                return null;
+            }
+            Method raced = methods.putIfAbsent(key, resolved);
+            return raced == null ? resolved : raced;
         }
     }
 

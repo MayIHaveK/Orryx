@@ -73,7 +73,7 @@
 
 默认使用 Kether 脚本引擎，并可通过 TabooLib JavaScript 模块使用 Nashorn ES5.1。技能和中转站设置 `Options.ScriptEngine: JAVASCRIPT` 后可直接编写 JS，短字段支持 `js:` / `kether:` 覆盖，复杂脚本可放在 `plugins/Orryx/scripts/` 并通过 `ScriptFile` 引用。
 
-首次启动或重载时，缺失的内置配置会逐个补齐，不会覆盖管理员已经修改的同名文件。技能目录默认释放 `JavaScript示例.yml`、两份 MayDMZAnimation 示例、`MayDMZParticle-JavaScript示例.yml` 与三份 AI 生成案例；中转站目录默认释放三份与无畏护盾配套的 AI 生成案例。可使用 `/skill cast <玩家> JavaScript示例 1 false` 直接验证 JS 环境；MayDMZAnimation 连点、普通播放示例分别使用 `/or skill cast <玩家> MayDMZAnimation-JavaScript示例`、`/or skill cast <玩家> MayDMZAnimation-JavaScript普通播放示例`。安装 MayDMZParticle 后可用 `/or skill cast <玩家> MayDMZParticle-JavaScript示例` 验证实体跟随、世界坐标播放、句柄返回和显式停止。`plugins/Orryx/stations/example.yml` 仅供阅读，默认 `Enabled: false`；旧版本已释放但没有 `Enabled` 的同名示例也默认禁用，避免监听聊天并反复输出测试值。
+首次启动或重载时，缺失的内置配置会逐个补齐，不会覆盖管理员已经修改的同名文件。技能目录默认释放 `JavaScript示例.yml`、两份 MayDMZAnimation 示例、`MayDMZParticle-JavaScript示例.yml` 与三份 AI 生成案例；中转站目录默认释放三份与无畏护盾配套的 AI 生成案例。可使用 `/skill cast <玩家> JavaScript示例 1 false` 直接验证 JS 环境；MayDMZAnimation 连点、普通播放示例分别使用 `/or skill cast <玩家> MayDMZAnimation-JavaScript示例`、`/or skill cast <玩家> MayDMZAnimation-JavaScript普通播放示例`，覆盖安全恢复分配、播放实例号与精确停止。安装 MayDMZParticle 后可用 `/or skill cast <玩家> MayDMZParticle-JavaScript示例` 验证实体根、socket、原始骨骼、locator、世界锚点、TRS、句柄停止和实体清理。`plugins/Orryx/stations/example.yml` 仅供阅读，默认 `Enabled: false`；旧版本已释放但没有 `Enabled` 的同名示例也默认禁用，避免监听聊天并反复输出测试值。
 
 Kether 内置 **75 个动作文件**：
 
@@ -306,8 +306,8 @@ Editor:
 <details>
 <summary><b>MayDMZAnimation（可选）</b></summary>
 
-- 公共 API：只通过 Bukkit Services 驱动动作 ID 和句柄，不访问插件内部组合图、协议或资源实现
-- Kether 动作 `maydmz` / `dmzanimation`：分配等待输入的主动连击，或立即启动动作、发送 signal、停止/取消、查询状态和直接播放动画
+- 公共 API：只在公开接口上通过 Bukkit Services 驱动动作 ID 和句柄，不反射混淆后的 provider，也不访问插件内部组合图、协议或资源实现
+- Kether 动作 `maydmz` / `dmzanimation`：分配等待输入的主动连击，或立即启动动作、发送 signal、停止/取消、查询状态、返回直接播放实例号并精确停止
 - 安全降级：未安装、尚未激活或 API 链接失败时 Orryx 仍正常加载，可用性语句返回 `false`
 - 高频调用：只缓存当前插件类加载器的公开 API 反射元数据；service 每次重新发现，且 Orryx 不增加后台轮询或网络流量
 - 详细语法与返回值见 [`docs/Client-Engine-Integration.md`](docs/Client-Engine-Integration.md)
@@ -321,7 +321,7 @@ Editor:
 - Kether 动作 `maydmzparticle` / `dmzparticle`：可用性、效果查询、实体或世界位置播放、按句柄/实体/全局停止
 - JavaScript 示例：`/or skill cast <玩家> MayDMZParticle-JavaScript示例`
 - 安全降级：未安装、尚未激活或 API 链接失败时 Orryx 仍正常加载
-- 性能边界：反射元数据按插件实例缓存，不轮询、不复制资源，也不新增逐粒子网络通信
+- 性能边界：服务端只发送效果级 PLAY/STOP 与按哈希传输的资源；发射器、逐粒子模拟、骨骼/locator 跟随和渲染均由客户端完成
 - 详细语法与返回值见 [`docs/Client-Engine-Integration.md`](docs/Client-Engine-Integration.md)
 
 </details>

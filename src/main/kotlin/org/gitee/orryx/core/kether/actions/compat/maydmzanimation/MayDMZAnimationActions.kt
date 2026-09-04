@@ -101,6 +101,17 @@ object MayDMZAnimationActions {
             .addContainerEntry("目标玩家", true, "@self")
             .result("成功提交播放的玩家数量", Type.INT)
             .example("maydmz playback play \"base.fusion_dance_left\" mode loop duration 200 they @self"),
+        wiki("播放动画并返回实例号")
+            .addEntry("播放标识符", Type.SYMBOL, head = "playback")
+            .addEntry("句柄播放动作", Type.SYMBOL, head = "play-handle")
+            .addEntry("动画 ID", Type.STRING)
+            .addEntry("播放模式", Type.STRING, true, "once", "mode")
+            .addEntry("播放速度", Type.FLOAT, true, "1.0", "speed")
+            .addEntry("最长 tick", Type.INT, true, "200", "duration")
+            .addEntry("过渡 tick", Type.FLOAT, true, "4.0", "transition")
+            .addContainerEntry("目标玩家", true, "@self")
+            .result("玩家 UUID 到播放实例号的映射", Type.MAP)
+            .example("maydmz playback play-handle \"base.fusion_dance_left\" mode loop they @self"),
         wiki("停止直接播放")
             .addEntry("播放标识符", Type.SYMBOL, head = "playback")
             .addEntry("停止动作", Type.SYMBOL, head = "stop")
@@ -108,6 +119,13 @@ object MayDMZAnimationActions {
             .addContainerEntry("目标玩家", true, "@self")
             .result("停止播放的玩家数量", Type.INT)
             .example("maydmz playback stop transition 4.0 they @self"),
+        wiki("按实例号停止直接播放")
+            .addEntry("播放标识符", Type.SYMBOL, head = "playback")
+            .addEntry("实例停止动作", Type.SYMBOL, head = "stop-instance")
+            .addEntry("播放实例号", Type.LONG)
+            .addEntry("过渡 tick", Type.FLOAT, true, "4.0", "transition")
+            .result("是否找到并停止实例", Type.BOOLEAN)
+            .example("maydmz playback stop-instance &instance transition 4.0"),
     ) {
         it.switch {
             case("available") { available() }
@@ -132,9 +150,11 @@ object MayDMZAnimationActions {
                 }
             }
             case("playback") {
-                when (it.expects("play", "stop")) {
-                    "play" -> play(it)
+                when (it.expects("play", "play-handle", "stop", "stop-instance")) {
+                    "play" -> play(it, false)
+                    "play-handle" -> play(it, true)
                     "stop" -> stopPlayback(it)
+                    "stop-instance" -> stopPlaybackInstance(it)
                     else -> error("MayDMZAnimation playback 语句书写错误")
                 }
             }
@@ -321,7 +341,7 @@ object MayDMZAnimationActions {
         }
     }
 
-    private fun play(reader: QuestReader): ScriptAction<Any?> {
+    private fun play(reader: QuestReader, returnHandles: Boolean): ScriptAction<Any?> {
         val animation = reader.nextParsedAction()
         val mode = reader.nextHeadAction("mode", def = "once")
         val speed = reader.nextHeadAction("speed", def = 1.0f)
@@ -336,11 +356,21 @@ object MayDMZAnimationActions {
                             run(transition).float { resolvedTransition ->
                                 containerOrSelf(players) { targets ->
                                     completeMain(future) {
-                                        targets.get<PlayerTarget>().count {
-                                            MayDMZAnimationCompat.play(
-                                                it.getSource(), resolvedAnimation, resolvedMode,
-                                                resolvedSpeed, resolvedDuration, resolvedTransition
-                                            )
+                                        if (returnHandles) {
+                                            targets.get<PlayerTarget>().associate { target ->
+                                                val player = target.getSource()
+                                                player.uniqueId.toString() to MayDMZAnimationCompat.play(
+                                                    player, resolvedAnimation, resolvedMode,
+                                                    resolvedSpeed, resolvedDuration, resolvedTransition,
+                                                )
+                                            }
+                                        } else {
+                                            targets.get<PlayerTarget>().count {
+                                                MayDMZAnimationCompat.play(
+                                                    it.getSource(), resolvedAnimation, resolvedMode,
+                                                    resolvedSpeed, resolvedDuration, resolvedTransition,
+                                                ) > 0L
+                                            }
                                         }
                                     }
                                 }
@@ -362,6 +392,22 @@ object MayDMZAnimationActions {
                         targets.get<PlayerTarget>().count {
                             MayDMZAnimationCompat.stopPlayback(it.getSource(), resolvedTransition)
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun stopPlaybackInstance(reader: QuestReader): ScriptAction<Any?> {
+        val instanceId = reader.nextParsedAction()
+        val transition = reader.nextHeadAction("transition", def = 4.0f)
+        return actionFuture { future ->
+            run(instanceId).long { resolvedInstanceId ->
+                run(transition).float { resolvedTransition ->
+                    completeMain(future) {
+                        MayDMZAnimationCompat.stopPlaybackInstance(
+                            resolvedInstanceId, resolvedTransition,
+                        )
                     }
                 }
             }

@@ -32,17 +32,21 @@ public final class MayDMZParticleApiBridge {
     public static boolean effectExists(String effectId) {
         Object service = service();
         return service != null && (Boolean) invoke(
-                service, "effectExists", new Class<?>[]{String.class}, effectId);
+                service, apiType("ParticlePlaybackService"), "effectExists",
+                new Class<?>[]{String.class}, effectId);
     }
 
     public static Set<?> effectIds() {
         Object service = service();
-        return service == null ? java.util.Collections.emptySet() : (Set<?>) invoke(service, "effectIds");
+        return service == null ? java.util.Collections.emptySet() : (Set<?>) invoke(
+                service, apiType("ParticlePlaybackService"), "effectIds", new Class<?>[0]);
     }
 
     public static int activeCount() {
         Object service = service();
-        return service == null ? 0 : ((Number) invoke(service, "activeCount")).intValue();
+        return service == null ? 0 : ((Number) invoke(
+                service, apiType("ParticlePlaybackService"), "activeCount", new Class<?>[0]
+        )).intValue();
     }
 
     public static String play(
@@ -54,7 +58,7 @@ public final class MayDMZParticleApiBridge {
         Object service = service();
         if (service == null) return "";
         Object transform = transform(x, y, z, pitch, yaw, roll, scaleX, scaleY, scaleZ);
-        Object handle = invoke(service, "play", new Class<?>[]{
+        Object handle = invoke(service, apiType("ParticlePlaybackService"), "play", new Class<?>[]{
                 String.class, Entity.class, String.class, apiType("ParticleTransform"), int.class
         }, effectId, player, bone == null ? "" : bone, transform, durationTicks);
         return handleValue(handle);
@@ -69,7 +73,7 @@ public final class MayDMZParticleApiBridge {
         Object service = service();
         if (service == null) return "";
         Object transform = transform(x, y, z, pitch, yaw, roll, scaleX, scaleY, scaleZ);
-        Object handle = invoke(service, "playAt", new Class<?>[]{
+        Object handle = invoke(service, apiType("ParticlePlaybackService"), "playAt", new Class<?>[]{
                 String.class, Location.class, apiType("ParticleTransform"), int.class
         }, effectId, location, transform, durationTicks);
         return handleValue(handle);
@@ -80,19 +84,22 @@ public final class MayDMZParticleApiBridge {
         if (service == null) return false;
         Object playbackHandle = construct(apiType("PlaybackHandle"),
                 new Class<?>[]{UUID.class}, UUID.fromString(handle));
-        return (Boolean) invoke(service, "stop",
+        return (Boolean) invoke(service, apiType("ParticlePlaybackService"), "stop",
                 new Class<?>[]{apiType("PlaybackHandle")}, playbackHandle);
     }
 
     public static int stopEntity(Entity entity) {
         Object service = service();
-        return service == null ? 0 : ((Number) invoke(service, "stopAll",
+        return service == null ? 0 : ((Number) invoke(
+                service, apiType("ParticlePlaybackService"), "stopAll",
                 new Class<?>[]{Entity.class}, entity)).intValue();
     }
 
     public static int stopEverywhere() {
         Object service = service();
-        return service == null ? 0 : ((Number) invoke(service, "stopEverywhere")).intValue();
+        return service == null ? 0 : ((Number) invoke(
+                service, apiType("ParticlePlaybackService"), "stopEverywhere", new Class<?>[0]
+        )).intValue();
     }
 
     private static Object transform(
@@ -109,7 +116,9 @@ public final class MayDMZParticleApiBridge {
     }
 
     private static String handleValue(Object handle) {
-        return String.valueOf(invoke(handle, "value"));
+        return String.valueOf(invoke(
+                handle, apiType("PlaybackHandle"), "value", new Class<?>[0]
+        ));
     }
 
     private static Object service() {
@@ -141,14 +150,6 @@ public final class MayDMZParticleApiBridge {
 
     private static Object invokeStatic(Class<?> owner, String name, Class<?>[] parameterTypes, Object... arguments) {
         return invoke(null, owner, name, parameterTypes, arguments);
-    }
-
-    private static Object invoke(Object target, String name, Object... arguments) {
-        return invoke(target, target.getClass(), name, new Class<?>[0], arguments);
-    }
-
-    private static Object invoke(Object target, String name, Class<?>[] parameterTypes, Object... arguments) {
-        return invoke(target, target.getClass(), name, parameterTypes, arguments);
     }
 
     private static Object invoke(Object target, Class<?> owner, String name,
