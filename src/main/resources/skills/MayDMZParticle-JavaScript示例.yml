@@ -1,0 +1,50 @@
+Options:
+  Type: "DIRECT"
+  Name: "MayDMZParticle JavaScript 示例"
+  ScriptEngine: "JAVASCRIPT"
+  Sort: 996
+  Icon: "MayDMZParticle JS"
+  XMaterial: "FIREWORK_STAR"
+  Description:
+    - '&f在右手播放跟随粒子，并在当前位置触发一次爆发'
+    - '&f演示播放句柄与显式停止语句'
+    - '&7需要安装并激活 MayDMZParticle'
+  IsLocked: false
+  MinLevel: 1
+  MaxLevel: 1
+  UpgradePointAction: "js: return 1;"
+  CastCheckAction: "js: return player != null && player.isOnline();"
+  IgnoreSilence: false
+  Variables:
+    MANA: "js: return 0;"
+    COOLDOWN: "js: return 60;"
+    SILENCE: "js: return 0;"
+Actions: |-
+  function main() {
+      var CompletableFuture = Java.type("java.util.concurrent.CompletableFuture");
+      return kether.run("maydmzparticle available").thenCompose(function(available) {
+          if (String(available) !== "true") {
+              player.sendMessage("§e[Orryx] MayDMZParticle 当前不可用，已安全跳过粒子示例。");
+              return CompletableFuture.completedFuture(false);
+          }
+          return kether.run('maydmzparticle play "dmz:example_bone_sparks" bone "socket:right_hand" duration 100 offset "0,-0.15,0" rotation "0,0,25" scale "1.2,1.2,1.2" they @self')
+              .thenCompose(function(handles) {
+                  var handle = handles == null ? "" : String(handles.get(player.getUniqueId().toString()));
+                  if (handle.length === 0) {
+                      player.sendMessage("§c[Orryx] 跟随粒子提交失败，请检查效果 ID 与客户端握手。");
+                      return CompletableFuture.completedFuture(false);
+                  }
+                  return kether.run('maydmzparticle play-at "dmz:example_burst" duration 60 scale "1.3,1.3,1.3" they @self')
+                      .thenCompose(function() {
+                          player.sendMessage("§a[Orryx] 粒子已播放；40 tick 后按句柄停止右手效果。");
+                          return scheduler.later(function() {
+                              return kether.run('maydmzparticle stop "' + handle + '"')
+                                  .thenApply(function(stopped) {
+                                      player.sendMessage("§b[Orryx] 粒子停止结果: " + String(stopped));
+                                      return String(stopped) === "true";
+                                  });
+                          }, 40);
+                      });
+              });
+      });
+  }

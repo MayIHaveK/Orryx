@@ -2207,6 +2207,42 @@
       }
     },
     {
+      "aliases": [
+        "dmzparticle"
+      ],
+      "contexts": [
+        "generic"
+      ],
+      "danger": {
+        "classification": "not-detected",
+        "evidence": []
+      },
+      "execution": {
+        "evidence": [],
+        "thread": "any"
+      },
+      "name": "maydmzparticle",
+      "namespace": "ORRYX_NAMESPACE",
+      "parserFactory": "scriptParser",
+      "pluginPrerequisites": [
+        {
+          "evidence": "src/main/kotlin/org/gitee/orryx/core/kether/actions/compat/maydmzparticle/MayDMZParticleActions.kt",
+          "module": "maydmzparticle",
+          "required": true
+        }
+      ],
+      "selectorUsage": {
+        "detected": false,
+        "evidence": []
+      },
+      "shared": true,
+      "source": {
+        "function": "mayDmzParticle",
+        "line": 16,
+        "path": "src/main/kotlin/org/gitee/orryx/core/kether/actions/compat/maydmzparticle/MayDMZParticleActions.kt"
+      }
+    },
+    {
       "aliases": [],
       "contexts": [
         "generic"
@@ -3884,11 +3920,11 @@
   ],
   "schemaVersion": "1.0",
   "sourceRoot": "src/main/kotlin/org/gitee/orryx/core/kether",
-  "sourceSha256": "ce4fdbc9c0adba17211e1e5e4278fdd7cd9c7f97f1a5225a65126ad1a5e1ef92",
+  "sourceSha256": "c0aab2dba0185b8776d7d684c33fe1eb0c40fd160f33d94d6928a9bf975ef778",
   "summary": {
-    "actionCount": 124,
-    "aliasCount": 9,
+    "actionCount": 125,
+    "aliasCount": 10,
     "implicitVariableCount": 9,
-    "sourceFileCount": 84
+    "sourceFileCount": 85
   }
 }

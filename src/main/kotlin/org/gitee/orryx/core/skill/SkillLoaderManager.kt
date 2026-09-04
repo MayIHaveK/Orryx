@@ -38,6 +38,7 @@ object SkillLoaderManager {
                 "JavaScript示例.yml",
                 "MayDMZAnimation-JavaScript示例.yml",
                 "MayDMZAnimation-JavaScript普通播放示例.yml",
+                "MayDMZParticle-JavaScript示例.yml",
                 "无尽深渊-AI生成案例.yml",
                 "无畏护盾-AI生成案例.yml",
                 "裂焱冲击-AI生成案例.yml",

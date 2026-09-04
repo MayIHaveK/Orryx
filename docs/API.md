@@ -1089,6 +1089,26 @@ Kether 是 Orryx 的主要脚本引擎，提供 40+ 内置动作。
 - **选择器动作**：几何体范围选择、目标筛选
 - **射线动作**：光线追踪、碰撞检测
 
+#### MayDMZParticle 可选语句
+
+安装并激活 MayDMZParticle 后可使用 `maydmzparticle`（别名 `dmzparticle`）：
+
+```text
+maydmzparticle available
+maydmzparticle exists "dmz:example_bone_sparks"
+maydmzparticle effects
+maydmzparticle active
+maydmzparticle play "dmz:example_bone_sparks" bone "socket:right_hand" duration 100 they @self
+maydmzparticle play-at "dmz:example_burst" duration 60 they @self
+maydmzparticle stop <播放句柄UUID>
+maydmzparticle stop-entity they @self
+maydmzparticle stop-all
+```
+
+`play` 与 `play-at` 返回玩家 UUID 到不透明播放句柄 UUID 的 Map。Orryx 只反射公共 API，不链接
+MayDMZParticle 的协议、传输、缓存或授权内部类；插件缺失时安全降级。完整参数、返回值与性能边界见
+[客户端引擎集成文档](Client-Engine-Integration.md#五maydmzparticle)。
+
 #### Kether 注释与完整脚本识别
 
 所有 Orryx 管理的 Kether 脚本入口使用相同预处理规则：
@@ -1119,6 +1139,10 @@ Orryx 通过 TabooLib JavaScript 模块加载 Nashorn。Java 8 使用 JDK 内置
   `maydmz.smoke.upper_wave` 循环动画，并通过 `scheduler.later` 在 40 tick 后执行
   `maydmz playback stop transition 4.0 they @self`；可执行
   `/or skill cast <玩家> MayDMZAnimation-JavaScript普通播放示例` 同时验证播放与结束语句。
+- `plugins/Orryx/skills/MayDMZParticle-JavaScript示例.yml`：先检查可选 API，再在右手播放跟随粒子、
+  在玩家当前位置播放一次世界粒子，并保存返回句柄；40 tick 后执行
+  `maydmzparticle stop "<句柄UUID>"` 显式停止。安装 MayDMZParticle 后可执行
+  `/or skill cast <玩家> MayDMZParticle-JavaScript示例`。
 - `plugins/Orryx/skills/无尽深渊-AI生成案例.yml`：完整的 `DIRECT AIM` JavaScript 示例，直接调用 Bukkit 粒子与实体 API，并用 `scheduler.repeat` 实现吸引、循环伤害和斩杀。
 - `plugins/Orryx/skills/裂焱冲击-AI生成案例.yml`：完整的 `DIRECT` JavaScript 示例，展示位移、药水、粒子、实体查询与路径伤害。
 - `plugins/Orryx/skills/无畏护盾-AI生成案例.yml`：与三份 JavaScript 中转站配套的 `PASSIVE` 示例，技能本体负责等级与变量计算。

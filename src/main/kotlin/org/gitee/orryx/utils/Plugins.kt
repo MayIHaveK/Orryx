@@ -66,3 +66,5 @@ val CloudPickPlugin = Plugin("CloudPick")
 val CraneAttributePlugin = Plugin("CraneAttribute")
 
 val MayDMZAnimationPlugin = Plugin("MayDMZAnimation")
+
+val MayDMZParticlePlugin = Plugin("MayDMZParticle")

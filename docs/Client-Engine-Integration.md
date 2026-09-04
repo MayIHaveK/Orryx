@@ -1,6 +1,7 @@
 # Orryx 客户端引擎集成文档
 
-Orryx 对 DragonCore（龙之核心）、GermPlugin（萌芽引擎）、ArcartX 和 MayDMZAnimation 提供可选兼容支持，包括触发器、Kether 动作和扩展功能。
+Orryx 对 DragonCore（龙之核心）、GermPlugin（萌芽引擎）、ArcartX、MayDMZAnimation 和
+MayDMZParticle 提供可选兼容支持，包括触发器、Kether 动作和扩展功能。
 
 ---
 
@@ -277,7 +278,69 @@ MayDMZAnimation。Java 8 兼容桥会按当前 MayDMZAnimation 插件实例缓�
 
 ---
 
-## 五、原有客户端引擎功能对比
+## 五、MayDMZParticle
+
+Orryx 只通过 MayDMZParticle 的稳定公共 API 接入，不引用资源目录、传输会话、内容哈希、协议帧、
+缓存或授权实现。`MayDMZParticle` 是软依赖；没有安装、尚未完成激活或 API 链接失败时 Orryx 仍正常
+加载，`maydmzparticle available` 返回 `false`，其余语句返回安全空值。
+
+语句主关键字为 `maydmzparticle`，别名为 `dmzparticle`。所有播放/停止操作在主线程执行。
+
+### 查询语句
+
+- `maydmzparticle available`：公共播放服务当前是否可用。
+- `maydmzparticle exists <效果ID>`：当前 last-good 目录是否包含效果。
+- `maydmzparticle effects`：返回当前效果 ID 列表。
+- `maydmzparticle active`：返回服务端跟踪的活动播放实例数。
+
+### 播放语句
+
+```text
+maydmzparticle play <效果ID> [bone <骨骼或socket>] [duration <tick>]
+    [offset <x,y,z>] [rotation <pitch,yaw,roll>] [scale <x,y,z>] [they <玩家容器>]
+
+maydmzparticle play-at <效果ID> [duration <tick>]
+    [offset <x,y,z>] [rotation <pitch,yaw,roll>] [scale <x,y,z>] [they <玩家容器>]
+```
+
+`play` 把效果附着到目标玩家；`bone` 为空时使用实体根，推荐跨模型使用
+`socket:right_hand` 等语义 socket。`play-at` 会在每名目标玩家执行语句时的当前位置建立固定世界锚点，
+随后不会跟随玩家移动。`duration 0` 表示由效果自身或显式停止决定。两者都返回
+`Map<玩家UUID字符串, 播放句柄UUID字符串>`；提交失败时对应值为空字符串。
+
+```text
+maydmzparticle play "dmz:example_bone_sparks" bone "socket:right_hand" duration 100 offset "0,-0.15,0" rotation "0,0,25" scale "1.2,1.2,1.2" they @self
+maydmzparticle play-at "dmz:example_burst" duration 60 scale "1.3,1.3,1.3" they @self
+```
+
+### 停止语句
+
+- `maydmzparticle stop <播放句柄UUID>`：按句柄停止一个实例，返回布尔值。
+- `maydmzparticle stop-entity [they <玩家容器>]`：停止目标玩家关联的全部实例，返回停止数量。
+- `maydmzparticle stop-all`：停止 MayDMZParticle 当前全部实例，返回停止数量。
+
+### JavaScript 技能示例
+
+内置 `skills/MayDMZParticle-JavaScript示例.yml` 是 Nashorn ES5.1 示例。它用
+`kether.run(...)` 检查可用性，在右手播放持续粒子，同时在当前世界位置播放爆发粒子；随后从播放结果
+Map 中读取当前玩家的句柄，并通过 `scheduler.later` 在 40 tick 后执行显式停止。测试命令：
+
+```text
+/or skill cast <玩家名> MayDMZParticle-JavaScript示例
+```
+
+旧服若已存在同名文件，Orryx 不会覆盖管理员修改的版本；需要查看新版范例时可对照 JAR 内资源。
+
+### 性能、带宽与权限边界
+
+Orryx 不轮询 MayDMZParticle，不复制粒子资源，也不自行发送 DragonMineZ 插件消息。Java 8 兼容桥只按
+当前插件实例缓存公共 API 的类、构造器和方法元数据；实际 service 每次重新发现，因此延迟激活或重载
+不会长期持有旧 provider。MayDMZParticle 只发送内容哈希资源和效果级 PLAY/STOP，逐粒子模拟留在客户端；
+Orryx 的伤害、冷却和命中仍必须由服务端技能逻辑判定，不能把客户端粒子当作玩法权威状态。
+
+---
+
+## 六、原有客户端引擎功能对比
 
 | 功能          |  DragonCore   | GermPlugin |     ArcartX      |
 |-------------|:-------------:|:----------:|:----------------:|

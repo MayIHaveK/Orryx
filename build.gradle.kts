@@ -215,6 +215,7 @@ taboolib {
             name("CloudPick").optional(true)
             name("CraneAttribute").optional(true)
             name("MayDMZAnimation").optional(true)
+            name("MayDMZParticle").optional(true)
         }
     }
     relocate("com.github.benmanes.caffeine", "org.gitee.orryx.caffeine")
@@ -307,7 +308,7 @@ tasks.test {
 
 val verifyMayDmzCompatIsolation = tasks.register("verifyMayDmzCompatIsolation") {
     group = "verification"
-    description = "Verifies the optional MayDMZAnimation bridge is packaged without bundling its API."
+    description = "Verifies optional MayDMZ bridges are packaged without bundling their APIs."
     dependsOn(tasks.named("jar"))
     inputs.file(tasks.named<Jar>("jar").flatMap { it.archiveFile })
 
@@ -320,13 +321,24 @@ val verifyMayDmzCompatIsolation = tasks.register("verifyMayDmzCompatIsolation") 
             }
             val bridge = "org/gitee/orryx/compat/maydmzanimation/MayDMZAnimationApiBridge.class"
             check(bridge in entries) { "MayDMZAnimation API bridge is missing from ${archive.name}" }
+            val particleBridge = "org/gitee/orryx/compat/maydmzparticle/MayDMZParticleApiBridge.class"
+            check(particleBridge in entries) { "MayDMZParticle API bridge is missing from ${archive.name}" }
             check(entries.none { it.startsWith("com/mayihavek/dmzanimation/api/") }) {
                 "MayDMZAnimation API classes must remain compileOnly and must not be bundled into Orryx"
+            }
+            check(entries.none { it.startsWith("com/mayihavek/dmzparticle/api/") }) {
+                "MayDMZParticle API classes must remain optional and must not be bundled into Orryx"
             }
             val bytes = zip.getInputStream(zip.getEntry(bridge)).use { it.readBytes() }
             val majorVersion = (bytes[6].toInt() and 0xff) shl 8 or (bytes[7].toInt() and 0xff)
             check(majorVersion == 52) {
                 "Optional MayDMZAnimation bridge must remain Java 8 bytecode, found class version $majorVersion"
+            }
+            val particleBytes = zip.getInputStream(zip.getEntry(particleBridge)).use { it.readBytes() }
+            val particleMajorVersion = (particleBytes[6].toInt() and 0xff) shl 8 or
+                (particleBytes[7].toInt() and 0xff)
+            check(particleMajorVersion == 52) {
+                "Optional MayDMZParticle bridge must remain Java 8 bytecode, found class version $particleMajorVersion"
             }
         }
     }

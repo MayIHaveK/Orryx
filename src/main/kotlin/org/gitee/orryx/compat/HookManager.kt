@@ -26,5 +26,6 @@ object HookManager {
         ArcartXPlugin.load()
         CraneAttributePlugin.load()
         MayDMZAnimationPlugin.load()
+        MayDMZParticlePlugin.load()
     }
 }

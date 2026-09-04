@@ -39,6 +39,20 @@ class JavaScriptEnvironmentTest {
     }
 
     @Test
+    fun `may dmz particle sample demonstrates entity world and handle lifecycle`() {
+        val sample = requireNotNull(
+            javaClass.classLoader.getResourceAsStream("skills/MayDMZParticle-JavaScript示例.yml"),
+        ).bufferedReader(Charsets.UTF_8).use { it.readText() }
+
+        assertTrue(sample.contains("maydmzparticle play \"dmz:example_bone_sparks\""))
+        assertTrue(sample.contains("maydmzparticle play-at \"dmz:example_burst\""))
+        assertTrue(sample.contains("maydmzparticle stop \"' + handle + '\""))
+        JavaScriptRuntime.validate(
+            JavaScriptCompiledScript("maydmz-particle-example", actionSource(sample)),
+        )
+    }
+
+    @Test
     fun `taboolib javascript module provides compilable nashorn`() {
         JavaScriptEnvironment.initialize()
         assertTrue(JavaScriptEnvironment.status.available, JavaScriptEnvironment.describe())
