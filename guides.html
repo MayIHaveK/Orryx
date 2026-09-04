@@ -262,7 +262,7 @@ Actions: |-
     <nav class="guide-next" aria-label="下一篇指南"><span>接下来</span><a href="#guides/ai-examples">从内置示例继续开发 →</a></nav>
 </article>
 
-<article data-guide-id="ai-examples" data-title="从内置示例继续开发" data-summary="四个技能范例与三份中转站范例分别展示什么" data-group="实践">
+<article data-guide-id="ai-examples" data-title="从内置示例继续开发" data-summary="动作、粒子与玩法技能范例分别展示什么" data-group="实践">
     <header class="guide-header">
         <p class="doc-breadcrumb">指南 / 实践</p>
         <h1>从内置示例继续开发</h1>
@@ -270,13 +270,14 @@ Actions: |-
     </header>
 
     <section class="guide-section">
-        <h2>技能目录里的五条路线</h2>
+        <h2>技能目录里的多条路线</h2>
         <div class="table-wrap"><table class="doc-table guide-table">
             <thead><tr><th>文件</th><th>适合学习</th><th>测试方式</th></tr></thead>
             <tbody>
                 <tr><td><code>JavaScript示例.yml</code></td><td>JS 引擎、短字段覆盖和 <code>main()</code></td><td>直接 cast</td></tr>
-                <tr><td><code>MayDMZAnimation-JavaScript示例.yml</code></td><td>JS 异步调用 <code>kether.run</code> 与可选插件安全降级</td><td>安装 MayDMZAnimation 后直接 cast</td></tr>
-                <tr><td><code>MayDMZParticle-JavaScript示例.yml</code></td><td>实体/世界粒子、句柄返回与显式停止</td><td>安装 MayDMZParticle 后直接 cast</td></tr>
+                <tr><td><code>MayDMZAnimation-JavaScript示例.yml</code></td><td>客户端输入连招、旧分配保存与条件恢复</td><td>cast 后连续左键；安装 MayDMZAnimation</td></tr>
+                <tr><td><code>MayDMZAnimation-JavaScript普通播放示例.yml</code></td><td>普通循环播放、实例号返回与精确停止</td><td>安装 MayDMZAnimation 后直接 cast</td></tr>
+                <tr><td><code>MayDMZParticle-JavaScript示例.yml</code></td><td>根/socket/bone/locator/世界锚点、TRS 与停止生命周期</td><td>安装 MayDMZParticle 后直接 cast</td></tr>
                 <tr><td><code>裂焱冲击-AI生成案例.yml</code></td><td>JS 调用 Bukkit 位移、药水、粒子和实体伤害</td><td>直接 cast</td></tr>
                 <tr><td><code>无尽深渊-AI生成案例.yml</code></td><td>JS 读取指向落点、绘制粒子并管理持续任务</td><td>cast 后左键确认</td></tr>
                 <tr><td><code>无畏护盾-AI生成案例.yml</code></td><td>JS 访问 Orryx API、Flag 和伤害事件</td><td>配合三份 JS 中转站触发</td></tr>
@@ -284,6 +285,7 @@ Actions: |-
         </table></div>
         <p>测试直放或指向技能时使用：</p>
         <pre class="guide-code"><code>/or skill cast &lt;玩家名&gt; &lt;技能名&gt;</code></pre>
+        <aside class="guide-note"><strong>客户端表现权威</strong><span>MayDMZAnimation 的物理按键采样和连招图遍历，以及 MayDMZParticle 的发射器推进、逐粒子模拟、骨骼与 locator 跟随、渲染都在 DragonMineZ 客户端完成。服务端保留资源许可、批次校验、旁观者转发与全部玩法判定。</span></aside>
     </section>
 
     <section class="guide-section">
