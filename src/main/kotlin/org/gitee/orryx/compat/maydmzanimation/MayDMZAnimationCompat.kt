@@ -1,5 +1,6 @@
 package org.gitee.orryx.compat.maydmzanimation
 
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.gitee.orryx.compat.CompatGuard
 import org.gitee.orryx.utils.MayDMZAnimationPlugin
@@ -10,11 +11,9 @@ object MayDMZAnimationCompat {
 
     private val guarded by unsafeLazy {
         val fallback: Bridge = UnavailableBridge
-        val initial = CompatGuard.firstAvailable(
-            default = { fallback },
-            { MayDMZAnimationPlugin.isEnabled } to { ApiBridge },
-        )
-        CompatGuard.degradeOnce("MayDMZAnimation", initial, fallback)
+        CompatGuard.degradePerProvider("MayDMZAnimation", ApiBridge, fallback) {
+            Bukkit.getPluginManager().getPlugin(MayDMZAnimationPlugin.name)?.takeIf { it.isEnabled }
+        }
     }
 
     fun available(): Boolean = guarded.invoke { it.available() }

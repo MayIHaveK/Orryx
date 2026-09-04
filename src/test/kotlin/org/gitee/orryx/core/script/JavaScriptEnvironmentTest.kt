@@ -1,10 +1,15 @@
 package org.gitee.orryx.core.script
 
+import org.bukkit.entity.Player
 import org.gitee.orryx.core.script.javascript.JavaScriptEnvironment
 import org.gitee.orryx.core.script.javascript.JavaScriptRuntime
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.`when`
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicBoolean
 import javax.script.Compilable
 import javax.script.Invocable
@@ -41,6 +46,43 @@ class JavaScriptEnvironmentTest {
         JavaScriptRuntime.validate(
             JavaScriptCompiledScript("maydmz-playback-example", actionSource(sample)),
         )
+    }
+
+    @Test
+    fun `may dmz playback sample preserves boxed long instance ids beyond javascript precision`() {
+        val sample = requireNotNull(
+            javaClass.classLoader.getResourceAsStream(
+                "skills/MayDMZAnimation-JavaScript普通播放示例.yml",
+            ),
+        ).bufferedReader(Charsets.UTF_8).use { it.readText() }
+        val playerId = UUID.randomUUID()
+        val player = mock(Player::class.java)
+        `when`(player.uniqueId).thenReturn(playerId)
+        val instanceId = 9_007_199_254_740_993L
+        val handles = mapOf(playerId.toString() to instanceId)
+        val engine = JavaScriptEnvironment.createEngine(javaClass.classLoader)
+        val bindings = engine.createBindings().apply {
+            put("player", player)
+            put("__handles", handles)
+        }
+
+        (engine as Compilable).compile(actionSource(sample)).eval(bindings)
+        val command = engine.eval(
+            "'maydmz playback stop-instance ' + String(resultForSelf(__handles)) + ' transition 4.0'",
+            bindings,
+        )
+
+        assertEquals(
+            "maydmz playback stop-instance 9007199254740993 transition 4.0",
+            command,
+        )
+        assertTrue(
+            sample.contains(
+                "'maydmz playback stop-instance ' + String(instance) + ' transition 4.0'",
+            ),
+        )
+        assertFalse(actionSource(sample).contains("Number("))
+        assertFalse(actionSource(sample).contains("parseInt("))
     }
 
     @Test

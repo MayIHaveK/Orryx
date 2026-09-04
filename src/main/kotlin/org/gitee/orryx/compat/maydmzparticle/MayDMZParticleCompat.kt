@@ -1,5 +1,6 @@
 package org.gitee.orryx.compat.maydmzparticle
 
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import org.gitee.orryx.compat.CompatGuard
@@ -11,11 +12,9 @@ object MayDMZParticleCompat {
 
     private val guarded by unsafeLazy {
         val fallback: Bridge = UnavailableBridge
-        val initial = CompatGuard.firstAvailable(
-            default = { fallback },
-            { MayDMZParticlePlugin.isEnabled } to { ApiBridge },
-        )
-        CompatGuard.degradeOnce("MayDMZParticle", initial, fallback)
+        CompatGuard.degradePerProvider("MayDMZParticle", ApiBridge, fallback) {
+            Bukkit.getPluginManager().getPlugin(MayDMZParticlePlugin.name)?.takeIf { it.isEnabled }
+        }
     }
 
     fun available() = guarded.invoke { it.available() }

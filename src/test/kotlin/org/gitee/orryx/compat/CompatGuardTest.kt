@@ -72,4 +72,56 @@ class CompatGuardTest {
         assertSame(failure, thrown)
         assertSame(primary, bridge.current())
     }
+
+    @Test
+    fun `provider scoped fallback recovers for a replacement provider`() {
+        val legacyProvider = Any()
+        val replacementProvider = Any()
+        var provider: Any? = legacyProvider
+        var primaryCalls = 0
+        var fallbackCalls = 0
+        var reports = 0
+        val bridge = ProviderScopedLinkageFallback(
+            primary = "primary",
+            fallback = "fallback",
+            providerIdentity = { provider },
+        ) { reports++ }
+
+        fun invoke(): String {
+            return bridge.invoke { active ->
+                if (active == "primary") {
+                    primaryCalls++
+                    if (provider === legacyProvider) throw NoSuchMethodError("legacy provider")
+                } else {
+                    fallbackCalls++
+                }
+                active
+            }
+        }
+
+        assertEquals("fallback", invoke())
+        assertEquals("fallback", invoke())
+        assertEquals(1, primaryCalls, "the failed provider must not be probed repeatedly")
+        assertEquals(2, fallbackCalls)
+        assertEquals(1, reports)
+
+        provider = replacementProvider
+        assertEquals("primary", invoke())
+        assertEquals(2, primaryCalls, "a replacement provider must restore the primary bridge")
+        assertEquals(1, reports)
+    }
+
+    @Test
+    fun `provider scoped fallback retries after an absent provider is installed`() {
+        var provider: Any? = null
+        val bridge = ProviderScopedLinkageFallback(
+            primary = "primary",
+            fallback = "fallback",
+            providerIdentity = { provider },
+        ) { error("an absent provider must not report a linkage failure") }
+
+        assertEquals("fallback", bridge.invoke { it })
+        provider = Any()
+        assertEquals("primary", bridge.invoke { it })
+    }
 }

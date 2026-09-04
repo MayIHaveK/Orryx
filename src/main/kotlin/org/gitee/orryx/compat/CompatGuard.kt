@@ -45,6 +45,17 @@ object CompatGuard {
         return OneTimeLinkageFallback(initial, fallback) { error -> report(name, error) }
     }
 
+    internal fun <T> degradePerProvider(
+        name: String,
+        primary: T,
+        fallback: T,
+        providerIdentity: () -> Any?,
+    ): ProviderScopedLinkageFallback<T> {
+        return ProviderScopedLinkageFallback(primary, fallback, providerIdentity) { error ->
+            report(name, error)
+        }
+    }
+
     @PublishedApi
     internal fun report(name: String, error: LinkageError) {
         warning("兼容模块 $name 加载失败，已降级: ${error.message ?: error.javaClass.simpleName}")
@@ -79,6 +90,59 @@ internal class OneTimeLinkageFallback<T>(
             }
             if (shouldReport) onLinkageError(error)
             block(fallback)
+        }
+    }
+}
+
+internal class ProviderScopedLinkageFallback<T>(
+    private val primary: T,
+    private val fallback: T,
+    private val providerIdentity: () -> Any?,
+    private val onLinkageError: (LinkageError) -> Unit,
+) {
+
+    private object NoFailedProvider
+
+    @Volatile
+    private var failedProvider: Any? = NoFailedProvider
+
+    fun <R> invoke(block: (T) -> R): R {
+        val provider = providerIdentity()
+        if (provider == null) {
+            clearFailure()
+            return block(fallback)
+        }
+        if (failedFor(provider)) return block(fallback)
+
+        return try {
+            block(primary)
+        } catch (error: LinkageError) {
+            val shouldReport = synchronized(this) {
+                if (failedProvider === provider) {
+                    false
+                } else {
+                    failedProvider = provider
+                    true
+                }
+            }
+            if (shouldReport) onLinkageError(error)
+            block(fallback)
+        }
+    }
+
+    private fun failedFor(provider: Any): Boolean {
+        return synchronized(this) {
+            if (failedProvider !== NoFailedProvider && failedProvider !== provider) {
+                failedProvider = NoFailedProvider
+            }
+            failedProvider === provider
+        }
+    }
+
+    private fun clearFailure() {
+        if (failedProvider === NoFailedProvider) return
+        synchronized(this) {
+            failedProvider = NoFailedProvider
         }
     }
 }
