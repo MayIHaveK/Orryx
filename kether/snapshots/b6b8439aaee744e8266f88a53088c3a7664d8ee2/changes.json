@@ -1,0 +1,76 @@
+{
+    "formatVersion": 1,
+    "fromReleaseId": "Orryx@2.54.130+31996f8244b16cd4629971c4bea417702184d49b",
+    "toReleaseId": "Orryx@2.56.0+b6b8439aaee744e8266f88a53088c3a7664d8ee2",
+    "breaking": true,
+    "summary": {
+        "actionsAdded": 26,
+        "actionsRemoved": 1,
+        "actionsChanged": 10,
+        "selectorsChanged": 1,
+        "triggersChanged": 0,
+        "propertiesChanged": 0
+    },
+    "actions": {
+        "added": [
+            "orryx.action.arcartx.sound.send.741e5ff5d3d1",
+            "orryx.action.maydmz.action.cancel.ff1eec855c32",
+            "orryx.action.maydmz.action.exists.a0b888306307",
+            "orryx.action.maydmz.action.running.dccef5645c10",
+            "orryx.action.maydmz.action.signal.38dda3131436",
+            "orryx.action.maydmz.action.start.6e8259320a8c",
+            "orryx.action.maydmz.action.stop.1b21e98e2f64",
+            "orryx.action.maydmz.available.f80d3672d3f3",
+            "orryx.action.maydmz.combo.assign.a9c3681653cb",
+            "orryx.action.maydmz.combo.clear.b61e7d99597b",
+            "orryx.action.maydmz.combo.compare-and-set.dd355640de6e",
+            "orryx.action.maydmz.combo.current.675c2608c99b",
+            "orryx.action.maydmz.combo.exists.34f13afb2d85",
+            "orryx.action.maydmz.playback.play-handle.1a45cab49461",
+            "orryx.action.maydmz.playback.play.82ebb0c47823",
+            "orryx.action.maydmz.playback.stop-instance.7914168f980a",
+            "orryx.action.maydmz.playback.stop.88dc9e128467",
+            "orryx.action.maydmzparticle.active.78422f1310ca",
+            "orryx.action.maydmzparticle.available.f05897e24dd8",
+            "orryx.action.maydmzparticle.effects.690349cb221e",
+            "orryx.action.maydmzparticle.exists.abd14bbccc9f",
+            "orryx.action.maydmzparticle.play-at.2ce13feb9ea2",
+            "orryx.action.maydmzparticle.play.9ff90e7f12eb",
+            "orryx.action.maydmzparticle.stop-all.6c5730de5311",
+            "orryx.action.maydmzparticle.stop-entity.2032dbb268fc",
+            "orryx.action.maydmzparticle.stop.10510afb6d21"
+        ],
+        "removed": [
+            "orryx.action.arcartx.sound.send.c9479b747612"
+        ],
+        "changed": [
+            "kether.action.itemstack.df4de9237a79",
+            "kether.action.material.ea623430fd82",
+            "kether.action.sound.31d5a2861b4a",
+            "kether.action.stopsound.76ce0ea6650a",
+            "orryx.action.draw.blockdata.bb6f12f89009",
+            "orryx.action.draw.itemdata.37ced26e6c6b",
+            "orryx.action.entity.ady.baab06fb86a9",
+            "orryx.action.entity.spawn.b425871105cb",
+            "orryx.action.potion.remove.06382e11a3f5",
+            "orryx.action.potion.set.b6c186d7276d"
+        ]
+    },
+    "selectors": {
+        "added": [],
+        "removed": [],
+        "changed": [
+            "orryx.selector.team.6b6c611b06e6"
+        ]
+    },
+    "triggers": {
+        "added": [],
+        "removed": [],
+        "changed": []
+    },
+    "properties": {
+        "added": [],
+        "removed": [],
+        "changed": []
+    }
+}
