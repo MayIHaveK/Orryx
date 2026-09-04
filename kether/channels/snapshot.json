@@ -2,9 +2,9 @@
     "$schema": "https://mayihavek.github.io/Orryx/kether/contracts/channel-manifest-v1.schema.json",
     "formatVersion": 1,
     "channel": "snapshot",
-    "releaseId": "Orryx@2.56.0+6ec3c68b8e6fa54d6fd28a452a5628ad900743bb",
+    "releaseId": "Orryx@2.56.0+c6932a4bd143108ad379de9c787e01b2b22d7de7",
     "pluginVersion": "2.56.0",
-    "commit": "6ec3c68b8e6fa54d6fd28a452a5628ad900743bb",
-    "publishedAt": "2026-09-04T09:47:46Z",
-    "releaseManifest": "/Orryx/kether/snapshots/6ec3c68b8e6fa54d6fd28a452a5628ad900743bb/manifest.json"
+    "commit": "c6932a4bd143108ad379de9c787e01b2b22d7de7",
+    "publishedAt": "2026-09-04T10:29:26Z",
+    "releaseManifest": "/Orryx/kether/snapshots/c6932a4bd143108ad379de9c787e01b2b22d7de7/manifest.json"
 }
