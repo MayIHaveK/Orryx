@@ -1,0 +1,47 @@
+Options:
+  Type: DIRECT
+  Name: 分阶段聚气与原生气功
+  ScriptEngine: JAVASCRIPT
+  IsLocked: false
+  MinLevel: 1
+  MaxLevel: 1
+  UpgradePointAction: 'js: return 1;'
+  CastCheckAction: 'js: return player != null && player.isOnline();'
+  Variables:
+    MANA: 'js: return 0;'
+    COOLDOWN: 'js: return 100;'
+    SILENCE: 'js: return 0;'
+Actions: |-
+  function main() {
+      var Bukkit = Java.type('org.bukkit.Bukkit');
+      var UUID = Java.type('java.util.UUID');
+      var addon = Bukkit.getPluginManager().getPlugin('MayDMZKiControl');
+      if (addon == null || !addon.isEnabled()) return false;
+      var id = player.getUniqueId().toString();
+      var key = 'or_' + UUID.randomUUID().toString().replace(/-/g, '');
+      function command(text) {
+          return Bukkit.dispatchCommand(Bukkit.getConsoleSender(), 'dmzki ' + text);
+      }
+      // 调度器保证 Bukkit 主线程；所有延迟归属于本次 Orryx 施法。
+      var flow = scheduler.run(function() {
+          return command('start ' + id + ' ' + key + ' ball 20 160 palette=cyan size=0.3');
+      }).thenCompose(function() {
+          return scheduler.later(function() {
+              return command('stage ' + id + ' ' + key + ' ball_full 20 palette=violet size=0.9');
+          }, 20);
+      }).thenCompose(function() {
+          return scheduler.later(function() {
+              // 真正生成玩家拥有的气功实体，朝准星方向发射。
+              // 可换成 wave/disk/spirit_bomb，或自定义 shots 预设。
+              return command('release ' + id + ' ' + key + ' ball style=wave palette=violet core=#FFFFFF damage=20 size=0.5 speed=1.5 life=60');
+          }, 20);
+      });
+      flow.whenComplete(function(value, error) {
+          // 成功释放后 stop 幂等；中断只取消聚气，绝不发射。
+          if (!addon.isEnabled()) return;
+          var cleanup = function() { command('stop ' + id + ' ' + key); };
+          if (Bukkit.isPrimaryThread()) cleanup();
+          else Bukkit.getScheduler().runTask(addon, new (Java.type('java.lang.Runnable'))({run: cleanup}));
+      });
+      return flow;
+  }
