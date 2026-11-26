@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "retrieved": "2026-10-27",
+  "verification": "Certificate chain and hostname verified against Git CA bundle; one-time expiry-only exception for upstream expired certificate. SHA-256 records recovered bytes, not an independent upstream signature. Normal builds are offline for these compile-only artifacts.",
+  "artifacts": [
+    {
+      "coordinate": "org.gitee.nodens:nodens:1.26.43:api",
+      "file": "nodens-1.26.43-api.jar",
+      "source": "https://maven.mcwar.cn/releases/org/gitee/nodens/nodens/1.26.43/nodens-1.26.43-api.jar",
+      "bytes": 4760280,
+      "sha256": "d56b873338cd770e50aa75ac7ad0f2745de6930a8a709c9c786e0456def5721d"
+    },
+    {
+      "coordinate": "com.gitee.redischannel:RedisChannel:2.15.14:api",
+      "file": "RedisChannel-2.15.14-api.jar",
+      "source": "https://maven.mcwar.cn/releases/com/gitee/redischannel/RedisChannel/2.15.14/RedisChannel-2.15.14-api.jar",
+      "bytes": 21147,
+      "sha256": "054a396bcc9c94aede1656d1af29b8a8420e531e4ef97e8cfb68925606f818f8"
+    },
+    {
+      "coordinate": "org.eldergod.ext:DragonCore:2.6.2.9",
+      "file": "DragonCore-2.6.2.9.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/DragonCore/2.6.2.9/DragonCore-2.6.2.9.jar",
+      "bytes": 497398,
+      "sha256": "0f2dd6b1c5a923f42162183d95874f4370370340cfb0ccec5c93d3c9658df11c"
+    },
+    {
+      "coordinate": "org.eldergod.ext:GermPlugin:4.4.1-5",
+      "file": "GermPlugin-4.4.1-5.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/GermPlugin/4.4.1-5/GermPlugin-4.4.1-5.jar",
+      "bytes": 1994262,
+      "sha256": "873bc7b3aa2aaab68a302788a0f56ba55f589ba513bfb7c2468c03c28e042549"
+    },
+    {
+      "coordinate": "org.eldergod.ext:DragonArmourers:6.72",
+      "file": "DragonArmourers-6.72.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/DragonArmourers/6.72/DragonArmourers-6.72.jar",
+      "bytes": 1583080,
+      "sha256": "34d7e799e0621e9cd439d1ab9649a67abb24357660ef6043fb8b4fee48ba3138"
+    },
+    {
+      "coordinate": "org.eldergod.ext:MythicMobs:4.11.0",
+      "file": "MythicMobs-4.11.0.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/MythicMobs/4.11.0/MythicMobs-4.11.0.jar",
+      "bytes": 10809246,
+      "sha256": "1154d86e09349cfb6e2157d20814e4e4679d856a3bcd93dd585e0773dc113f53"
+    },
+    {
+      "coordinate": "org.eldergod.ext:GDDTitle:2.1",
+      "file": "GDDTitle-2.1.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/GDDTitle/2.1/GDDTitle-2.1.jar",
+      "bytes": 8604,
+      "sha256": "b35f82fc01ff295a55e34028a0a576861dac5bc29a203e832b98df55795347cc"
+    },
+    {
+      "coordinate": "org.eldergod.ext:GlowAPI:1.4.6",
+      "file": "GlowAPI-1.4.6.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/GlowAPI/1.4.6/GlowAPI-1.4.6.jar",
+      "bytes": 84168,
+      "sha256": "45dd5f8f21aee45f29bc339bf48984016b5a878114c5f1561bb1d0153d9657e0"
+    },
+    {
+      "coordinate": "org.eldergod.ext:AttributePlus-api:1.0",
+      "file": "AttributePlus-api-1.0.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/AttributePlus-api/1.0/AttributePlus-api-1.0.jar",
+      "bytes": 755115,
+      "sha256": "5043c41c52e060b7e737b82458f9d90420faa4d2f92af1a30d1278c68aa95dd0"
+    },
+    {
+      "coordinate": "org.eldergod.ext:DungeonPlus:1.4.3",
+      "file": "DungeonPlus-1.4.3.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/DungeonPlus/1.4.3/DungeonPlus-1.4.3.jar",
+      "bytes": 4476001,
+      "sha256": "5085732797ee394635ba7dbab5835902e6f236637c3c011788d73d906abed7f4"
+    },
+    {
+      "coordinate": "org.eldergod.ext:CloudPick:1.2.1",
+      "file": "CloudPick-1.2.1.jar",
+      "source": "https://maven.mcwar.cn/releases/org/eldergod/ext/CloudPick/1.2.1/CloudPick-1.2.1.jar",
+      "bytes": 936205,
+      "sha256": "22da0829cb77007e2e0aed027b39a8d057c2120e67501d920241dd9d64e9d5d1"
+    }
+  ]
+}

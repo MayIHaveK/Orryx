@@ -13,8 +13,6 @@ import java.util.UUID
 
 object Team: ISelectorStream {
 
-    @Volatile
-    private var resolveTeamPlayers: (Player) -> Set<UUID> = { emptySet() }
 
     override val keys = arrayOf("team")
 
@@ -22,14 +20,14 @@ object Team: ISelectorStream {
         get() = Selector.new("队伍过滤", keys, SelectorType.STREAM)
             .addExample("@team")
             .addExample("!@team")
-            .description("只保留队内人员，或只保留队外人员；未安装 DungeonPlus 时队伍为空")
+            .description("只保留队内人员，或只保留队外人员；支持 DMZ 队伍、原版队伍及已启用的 DungeonPlus")
 
     internal fun installResolver(resolver: (Player) -> Set<UUID>) {
-        resolveTeamPlayers = resolver
+        org.gitee.orryx.module.team.TeamRelations.installExternal(resolver)
     }
 
     override fun processStream(container: IContainer, context: ScriptContext, parameter: StringParser.Entry) {
-        val teamPlayers = resolveTeamPlayers(context.bukkitPlayer())
+        val teamPlayers = org.gitee.orryx.module.team.TeamRelations.members(context.bukkitPlayer())
         container.removeIf { target ->
             shouldRemoveTeamTarget(
                 reverse = parameter.reverse,

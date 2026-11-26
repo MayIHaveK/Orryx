@@ -49,6 +49,28 @@ public final class MayDMZParticleApiBridge {
         )).intValue();
     }
 
+    public static Object prepare(Player player, String effectId) {
+        Object service = service();
+        if (service == null) throw new IllegalStateException("MayDMZParticle unavailable");
+        Class<?> type = apiType("ParticlePlaybackService");
+        try { bindings().method(type, "prepare", new Class<?>[]{Player.class, String.class}); }
+        catch (NoSuchMethodException error) {
+            throw new IllegalStateException("请更新 MayDMZParticle 以支持资源准备", error);
+        }
+        return invoke(service, type, "prepare", new Class<?>[]{Player.class, String.class}, player, effectId);
+    }
+
+    public static boolean preparationReady(Object preparation) {
+        return (Boolean) invoke(preparation, apiType("AssetPreparation"), "ready", new Class<?>[0]);
+    }
+
+    public static void closePreparation(Object preparation) {
+        // The lease owns its provider class, even if that provider was disabled/replaced meanwhile.
+        try { ((AutoCloseable) preparation).close(); }
+        catch (RuntimeException error) { throw error; }
+        catch (Exception error) { throw new IllegalStateException("Cannot release asset preparation", error); }
+    }
+
     public static String play(
             Player player, String effectId, String bone, int durationTicks,
             float x, float y, float z,
@@ -79,6 +101,20 @@ public final class MayDMZParticleApiBridge {
         return handleValue(handle);
     }
 
+    /** Frozen world anchor with the caster heading composed before the authored local transform. */
+    public static String playAtFacing(Location location,String effectId,int duration,float[] offset,float[] rotation,float[] scale) {
+        Object service=service();if(service==null)return "";
+        Object local=transform(offset[0],offset[1],offset[2],rotation[0],rotation[1],rotation[2],scale[0],scale[1],scale[2]);
+        Class<?> type=apiType("ParticleTransform");
+        double angle=Math.toRadians(-location.getYaw()),c=Math.cos(angle),s=Math.sin(angle);
+        double sy=Math.sin(angle/2),cy=Math.cos(angle/2);
+        float qx=((Number)invoke(local,type,"qx",new Class<?>[0])).floatValue(),qy=((Number)invoke(local,type,"qy",new Class<?>[0])).floatValue();
+        float qz=((Number)invoke(local,type,"qz",new Class<?>[0])).floatValue(),qw=((Number)invoke(local,type,"qw",new Class<?>[0])).floatValue();
+        Object oriented=construct(type,new Class<?>[]{float.class,float.class,float.class,float.class,float.class,float.class,float.class,float.class,float.class,float.class},
+            (float)(c*offset[0]+s*offset[2]),offset[1],(float)(-s*offset[0]+c*offset[2]),
+            (float)(cy*qx+sy*qz),(float)(cy*qy+sy*qw),(float)(cy*qz-sy*qx),(float)(cy*qw-sy*qy),scale[0],scale[1],scale[2]);
+        return handleValue(invoke(service,apiType("ParticlePlaybackService"),"playAt",new Class<?>[]{String.class,Location.class,type,int.class},effectId,location,oriented,duration));
+    }
     public static boolean stop(String handle) {
         Object service = service();
         if (service == null) return false;

@@ -10,7 +10,8 @@ object DungeonPlusTeamHook {
 
     fun install() {
         Team.installResolver { player ->
-            DungeonPlus.teamManager.getTeam(player)
+            if (!org.bukkit.Bukkit.getPluginManager().isPluginEnabled("DungeonPlus")) emptySet()
+            else DungeonPlus.teamManager.getTeam(player)
                 ?.getPlayers(PlayerStateType.ONLINE)
                 ?.mapTo(linkedSetOf()) { it.uniqueId }
                 ?: emptySet()

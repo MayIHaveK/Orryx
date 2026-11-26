@@ -80,6 +80,15 @@ LarkSuite:
   AppSecret: ""
   ParentWikiToken: ""
   SpaceId: ""
+# DMZ 可选技能编排；仅在对应附属与客户端通道可用时准备资源。
+DMZStudio:
+  Preload:
+    Enabled: true
+    # 自动读取已发布技能的 Options.DMZStudioProjects、DMZStudioEffects、DMZStudioAnimations。
+    # 老版导出项以同名工程识别；服务端脚本的其他工程可在这里补充。
+    Projects: []
+    MaxProjects: 32
+    MaxPlayers: 128
 # AI接入
 OpenAI:
   ApiKey: ""

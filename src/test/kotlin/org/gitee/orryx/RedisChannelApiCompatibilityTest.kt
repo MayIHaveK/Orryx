@@ -22,13 +22,11 @@ class RedisChannelApiCompatibilityTest {
     fun `cache managers only use RedisChannel API v2`() {
         val singleSource = readSource("src/main/kotlin/org/gitee/orryx/dao/cache/RedisManager.kt")
         val clusterSource = readSource("src/main/kotlin/org/gitee/orryx/dao/cache/ClusterRedisManager.kt")
-        val buildScript = readSource("build.gradle.kts")
 
         assertTrue("api.executeAsync" in singleSource)
         assertTrue("api.executeClusterAsync" in clusterSource)
         assertFalse("useAsyncCommands" in singleSource)
         assertFalse("useAsyncCommands" in clusterSource)
-        assertTrue("RedisChannel:2.15.14:api" in buildScript)
     }
 
     @Test

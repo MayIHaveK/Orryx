@@ -10,7 +10,8 @@ class JobLoader(override val key: String, val configuration: Configuration): IJo
 
     override val name: String = (options.getString("Name") ?: key).colored()
 
-    override val skills: List<String> = options.getStringList("Skills")
+    private val configuredSkills = options.getStringList("Skills")
+    override val skills: List<String> get() = (configuredSkills + org.gitee.orryx.module.dmzstudio.StudioReleases.skillsForJob(key)).distinct()
 
     override val attributes: List<String> = options.getStringList("Attributes")
 

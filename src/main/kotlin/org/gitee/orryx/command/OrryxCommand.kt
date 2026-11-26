@@ -60,6 +60,9 @@ object OrryxCommand {
     val script = OrryxScriptCommand
 
     @CommandBody
+    val studio = orryxStudioCommand
+
+    @CommandBody
     val navigation = OrryxPlayerNavigationCommand
 
     @CommandBody

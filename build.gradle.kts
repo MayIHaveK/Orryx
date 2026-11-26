@@ -2,6 +2,7 @@ import groovy.json.JsonSlurper
 import io.izzel.taboolib.gradle.*
 import xyz.jpenilla.runpaper.task.RunServer
 import java.util.zip.ZipFile
+import java.security.MessageDigest
 
 val publishUsername: String by project
 val publishPassword: String by project
@@ -233,33 +234,52 @@ taboolib {
 
 repositories {
     mavenCentral()
-    maven("https://maven.mcwar.cn/releases")
     maven("https://repo.codemc.io/repository/maven-releases")
 }
 
+// Keep unavailable third-party API versions reproducible without weakening TLS globally.
+val compileOnlyLock = file("libs/compile-only/dependencies.lock.json")
+val lockedApis = (JsonSlurper().parse(compileOnlyLock) as Map<*, *>)["artifacts"] as List<Map<String, Any>>
+val lockedApiFiles = lockedApis.map { item ->
+    val name = item["file"] as String
+    require(name.matches(Regex("[A-Za-z0-9_.-]+\\.jar"))) { "Unsafe API lock filename: $name" }
+    file("libs/compile-only/$name")
+}
+val verifyCompileOnlyApis = tasks.register("verifyCompileOnlyApis") {
+    group = "verification"
+    description = "Verifies exact third-party compile-only API bytes from the checked-in lock."
+    inputs.file(compileOnlyLock)
+    inputs.files(lockedApiFiles)
+    doLast {
+        lockedApis.zip(lockedApiFiles).forEach { (item, jar) ->
+            check(jar.isFile) { "Missing compile-only API: ${jar.name}; see libs/compile-only/README.md" }
+            val digest = MessageDigest.getInstance("SHA-256")
+            jar.inputStream().use { input ->
+                val buffer = ByteArray(65536)
+                while (true) { val read = input.read(buffer); if (read < 0) break; digest.update(buffer, 0, read) }
+            }
+            val actual = digest.digest().joinToString("") { "%02x".format(it) }
+            check(actual == item["sha256"]) { "Compile-only API hash mismatch: ${jar.name}" }
+        }
+    }
+}
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach { dependsOn(verifyCompileOnlyApis) }
+tasks.withType<JavaCompile>().configureEach { dependsOn(verifyCompileOnlyApis) }
+tasks.named("check") { dependsOn(verifyCompileOnlyApis) }
+
 dependencies {
+    compileOnly(files(lockedApiFiles))
+    // RedisChannel API exposes Lettuce types; this is its original published compile dependency.
+    compileOnly("io.lettuce:lettuce-core:6.8.0.RELEASE")
     compileOnly("ink.ptms.core:v12004:12004:mapped")
     compileOnly("ink.ptms.core:v12004:12004:universal")
     compileOnly("ink.ptms.core:v11200:11200")
     compileOnly("ink.ptms:nms-all:1.0.0")
 
-    compileOnly("org.gitee.nodens:nodens:1.26.43:api")
-    compileOnly("com.gitee.redischannel:RedisChannel:2.15.14:api")
     compileOnly("ink.ptms.adyeshach:api:2.1.28")
     compileOnly("com.github.retrooper:packetevents-spigot:2.7.0")
-    compileOnly("org.eldergod.ext:DragonCore:2.6.2.9")
-    compileOnly("org.eldergod.ext:GermPlugin:4.4.1-5")
-    compileOnly("org.eldergod.ext:DragonArmourers:6.72")
-    compileOnly("org.eldergod.ext:MythicMobs:4.11.0") {
-        exclude("com.google.guava", "guava")
-    }
 
-    compileOnly("org.eldergod.ext:GDDTitle:2.1")
-    compileOnly("org.eldergod.ext:GlowAPI:1.4.6")
-    compileOnly("org.eldergod.ext:AttributePlus-api:1.0")
-    compileOnly("org.eldergod.ext:DungeonPlus:1.4.3")
     compileOnly("net.dmulloy2:ProtocolLib:5.3.0")
-    compileOnly("org.eldergod.ext:CloudPick:1.2.1")
 
     compileOnly("org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1")
     compileOnly("com.github.ben-manes.caffeine:caffeine:2.9.3")
@@ -289,7 +309,7 @@ dependencies {
 
     compileOnly(kotlin("stdlib"))
     compileOnly(kotlin("reflect"))
-    compileOnly(fileTree("libs"))
+    compileOnly(fileTree("libs") { include("*.jar") })
 }
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {

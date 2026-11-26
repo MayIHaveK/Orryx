@@ -1018,6 +1018,40 @@
         "generic"
       ],
       "danger": {
+        "classification": "not-detected",
+        "evidence": []
+      },
+      "execution": {
+        "evidence": [],
+        "thread": "any"
+      },
+      "name": "dmzstudio",
+      "namespace": "ORRYX_NAMESPACE",
+      "parserFactory": "scriptParser",
+      "pluginPrerequisites": [
+        {
+          "evidence": "src/main/kotlin/org/gitee/orryx/core/kether/actions/compat/dmzstudio/StudioActions.kt",
+          "module": "dmzstudio",
+          "required": true
+        }
+      ],
+      "selectorUsage": {
+        "detected": false,
+        "evidence": []
+      },
+      "shared": true,
+      "source": {
+        "function": "parser",
+        "line": 12,
+        "path": "src/main/kotlin/org/gitee/orryx/core/kether/actions/compat/dmzstudio/StudioActions.kt"
+      }
+    },
+    {
+      "aliases": [],
+      "contexts": [
+        "generic"
+      ],
+      "danger": {
         "classification": "state-mutating",
         "evidence": [
           ".teleport(",
@@ -3920,11 +3954,11 @@
   ],
   "schemaVersion": "1.0",
   "sourceRoot": "src/main/kotlin/org/gitee/orryx/core/kether",
-  "sourceSha256": "4ccbf53350f4cde181762e8637e1f31752b54e1426900d061df3cb30f02a9ab6",
+  "sourceSha256": "8d2eb1015e4cbea2f09fb21f74957974fa46d0dae0e21fa3624fb1a7041b2d43",
   "summary": {
-    "actionCount": 125,
+    "actionCount": 126,
     "aliasCount": 10,
     "implicitVariableCount": 9,
-    "sourceFileCount": 85
+    "sourceFileCount": 86
   }
 }

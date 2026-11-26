@@ -26,6 +26,8 @@ object SkillLoaderManager {
         return skillMap
     }
 
+    internal fun installStudioSkill(key: String, skill: ISkill) { skillMap[key] = skill }
+
     @Reload(1)
     @Awake(LifeCycle.ENABLE)
     private fun reload() {
@@ -56,9 +58,12 @@ object SkillLoaderManager {
                 skillMap[skill.key] = skill
                 if (skill is ICastSkill) castSkillMap[skill.key] = skill
             }
+            org.gitee.orryx.module.dmzstudio.StudioReleases.contribute(skillMap)
+            skillMap.values.filterIsInstance<ICastSkill>().forEach { castSkillMap[it.key] = it }
             MemoryCache.invalidatePlayerSkills()
             consoleMessage("&e┣&7Skills loaded &e${skillMap.size} &a√")
             StateManager.reload(castSkillMap)
+            org.gitee.orryx.module.dmzstudio.StudioPreloads.requestRefresh()
         }
     }
 

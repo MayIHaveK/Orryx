@@ -291,6 +291,11 @@ provider 实现类；Bukkit service provider 仍在每次调用时重新取得�
 
 ## 五、MayDMZParticle
 
+支持模型特效的 MayDMZParticle/DMZ 版本也使用下面同一组语句和播放句柄。
+例如 `maydmzparticle play-at "imported:suanc/fx/attack1/idle" duration 60 they @self`。
+粒子目录中的 `*.effect.json` 决定模型、动画、材质和定位器粒子事件；Orryx 不解释 Ax 资源格式。
+只迁移特效时无需分配人物动作或 Chronos 控制器。客户端需声明模型特效能力，旧客户端继续使用普通粒子。
+
 Orryx 只通过 MayDMZParticle 的稳定公共 API 接入，不引用资源目录、传输会话、内容哈希、协议帧、
 缓存或授权实现。`MayDMZParticle` 是软依赖；没有安装、尚未完成激活或 API 链接失败时 Orryx 仍正常
 加载，`maydmzparticle available` 返回 `false`，其余语句返回安全空值。
@@ -348,7 +353,7 @@ Map 读取句柄，依次执行 locator 句柄停止、世界句柄停止与 `st
 
 ### 性能、带宽与权限边界
 
-Orryx 不轮询 MayDMZParticle，不复制粒子资源，也不自行发送 DragonMineZ 插件消息。Java 8 兼容桥只在
+MayDMZParticle 兼容桥不轮询、不复制粒子资源，也不自行发送粒子播放协议。Java 8 兼容桥只在
 `ParticlePlaybackService` 等公共 API 类型上解析并缓存方法元数据；实际 service 每次重新发现，因此延迟激活
 或重载不会长期持有旧 provider。MayDMZParticle 只发送内容哈希资源和效果级 PLAY/STOP，发射器推进、逐粒子
 模拟、骨骼/socket/locator 最终姿态跟随和渲染全部留在客户端；
@@ -356,7 +361,22 @@ Orryx 的伤害、冷却和命中仍必须由服务端技能逻辑判定，不�
 
 ---
 
-## 六、原有客户端引擎功能对比
+## 六、可选 DMZ 技能工坊
+
+`/orryx studio <工程ID>` 为有 `orryx.studio.edit` 权限的 DMZ 玩家打开 Blockbench 配对入口。
+工程存储在 `studio/<id>.json`，统一引用 MayDMZAnimation 与 MayDMZParticle 资源。
+客户端仅提交有界数据，服务器校验后预览或保存；预览不会运行事件脚本。
+
+技能使用 `dmzstudio run "工程ID"` 等待完成，或 `dmzstudio play "工程ID"` 获取独立施放 ID，
+再用 `dmzstudio stop &handle` 停止本玩家指定实例。同一玩家可以同时运行多个工程；取消不会全局清场。
+事件轨道引用服务器 `scripts/studio/<工程>/<事件>.ks`，保留原技能参数，额外提供 `studioCast`、
+`studioCue`、`studioTick`。不接受客户端上传脚本。已有 MM、Kether、JS 和动作插件接口不受此入口替换。
+
+工坊协议单独版本化；缺少表现服务时不打开。当前模型草稿预览为本机画面，工程预览可能被附近玩家看到。
+资源安装与工程保存分离，避免“保存成功”但服务器根本没有该模型。详细安装与已测范围见 DMZ 仓库
+`extensions/blockbench-dmz-studio/README.zh_cn.md` 和 `docs/architecture/rendering/skill-studio.zh_cn.md`。
+
+## 七、原有客户端引擎功能对比
 
 | 功能          |  DragonCore   | GermPlugin |     ArcartX      |
 |-------------|:-------------:|:----------:|:----------------:|

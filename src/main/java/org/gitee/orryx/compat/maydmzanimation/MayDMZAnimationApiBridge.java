@@ -29,10 +29,40 @@ public final class MayDMZAnimationApiBridge {
     private MayDMZAnimationApiBridge() {
     }
 
+    public static Object prepare(Player player, String animationId) {
+        Object provider = service("playback");
+        if (provider == null) throw new IllegalStateException("MayDMZAnimation unavailable");
+        return invokeOptional(provider, apiType("AnimationPlaybackService"), "prepare",
+                new Class<?>[]{Player.class, String.class}, player, animationId)
+                .orElseThrow(() -> new IllegalStateException("请更新 MayDMZAnimation 以支持资源准备"));
+    }
+
+    public static boolean preparationReady(Object preparation) {
+        return (Boolean) invoke(preparation, apiType("AssetPreparation"), "ready", new Class<?>[0]);
+    }
+
+    public static void closePreparation(Object preparation) {
+        try { ((AutoCloseable) preparation).close(); }
+        catch (RuntimeException error) { throw error; }
+        catch (Exception error) { throw new IllegalStateException("Cannot release animation preparation", error); }
+    }
+
     public static boolean available() {
         return service("actions") != null
                 || service("playback") != null
                 || service("combos") != null;
+    }
+
+    public static java.util.List<String> animationIds() {
+        Object provider = service("playback");
+        if (provider == null) return java.util.Collections.emptyList();
+        Optional<Object> result = invokeOptional(provider, apiType("AnimationPlaybackService"), "animationIds", new Class<?>[0]);
+        if (!result.isPresent() || !(result.get() instanceof java.util.Collection)) return java.util.Collections.emptyList();
+        java.util.List<String> ids = new java.util.ArrayList<>();
+        for (Object value : (java.util.Collection<?>) result.get()) {
+            if (value instanceof String) ids.add((String) value);
+        }
+        return ids;
     }
 
     public static String assignCombo(Player player, String comboId) {
@@ -234,6 +264,26 @@ public final class MayDMZAnimationApiBridge {
                 transition
         );
         return ((Number) instanceId).longValue();
+    }
+
+    public static boolean supportsChannelPlayback() {
+        if (service("playback") == null) return false;
+        try {
+            apiType("AnimationPlaybackService").getMethod("playChannel", Player.class, String.class,
+                    String.class, apiType("PlaybackMode"), float.class, int.class, float.class);
+            return true;
+        } catch (NoSuchMethodException absent) { return false; }
+    }
+
+    public static long playChannel(Player player, String channel, String animation, String mode,
+                                   float speed, int duration, float transition) {
+        Object service = service("playback");
+        if (service == null) return 0L;
+        Class<?> modeType = apiType("PlaybackMode");
+        Object playbackMode = invokeStatic(modeType, "parse", new Class<?>[]{String.class}, mode);
+        return ((Number) invoke(service, apiType("AnimationPlaybackService"), "playChannel",
+                new Class<?>[]{Player.class, String.class, String.class, modeType, float.class, int.class, float.class},
+                player, channel, animation, playbackMode, speed, duration, transition)).longValue();
     }
 
     public static boolean stopPlayback(Player player, float transition) {

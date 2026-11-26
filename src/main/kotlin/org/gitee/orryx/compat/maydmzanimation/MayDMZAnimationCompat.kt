@@ -18,6 +18,12 @@ object MayDMZAnimationCompat {
 
     fun available(): Boolean = guarded.invoke { it.available() }
 
+    fun animationIds(): List<String> = guarded.invoke { it.animationIds() }
+
+    fun supportsChannelPlayback(): Boolean = guarded.invoke { it.supportsChannelPlayback() }
+    fun playChannel(player: Player, channel: String, animation: String, mode: String, speed: Float, duration: Int, transition: Float): Long =
+        guarded.invoke { it.playChannel(player, channel, animation, mode, speed, duration, transition) }
+
     fun assignCombo(player: Player, comboId: String): String {
         return guarded.invoke { it.assignCombo(player, comboId) }
     }
@@ -83,6 +89,9 @@ object MayDMZAnimationCompat {
 
     internal interface Bridge {
         fun available(): Boolean
+        fun animationIds(): List<String> = emptyList()
+        fun supportsChannelPlayback(): Boolean = false
+        fun playChannel(player: Player, channel: String, animation: String, mode: String, speed: Float, duration: Int, transition: Float): Long = 0L
         fun assignCombo(player: Player, comboId: String): String
         fun clearCombo(player: Player): String
         fun compareAndSetCombo(player: Player, expectedCurrent: String, replacement: String): String
@@ -108,6 +117,8 @@ object MayDMZAnimationCompat {
 
     private object UnavailableBridge : Bridge {
         override fun available() = false
+        override fun supportsChannelPlayback() = false
+        override fun playChannel(player: Player, channel: String, animation: String, mode: String, speed: Float, duration: Int, transition: Float) = 0L
         override fun assignCombo(player: Player, comboId: String) = "unavailable"
         override fun clearCombo(player: Player) = "unavailable"
         override fun compareAndSetCombo(player: Player, expectedCurrent: String, replacement: String) =
@@ -134,6 +145,10 @@ object MayDMZAnimationCompat {
 
     private object ApiBridge : Bridge {
         override fun available() = MayDMZAnimationApiBridge.available()
+        override fun animationIds(): List<String> = MayDMZAnimationApiBridge.animationIds()
+        override fun supportsChannelPlayback() = MayDMZAnimationApiBridge.supportsChannelPlayback()
+        override fun playChannel(player: Player, channel: String, animation: String, mode: String, speed: Float, duration: Int, transition: Float) =
+            MayDMZAnimationApiBridge.playChannel(player, channel, animation, mode, speed, duration, transition)
         override fun assignCombo(player: Player, comboId: String) =
             MayDMZAnimationApiBridge.assignCombo(player, comboId)
         override fun clearCombo(player: Player) = MayDMZAnimationApiBridge.clearCombo(player)
