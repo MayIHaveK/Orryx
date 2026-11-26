@@ -4,11 +4,11 @@
     "schemaVersion": 3,
     "pluginId": "Orryx",
     "pluginVersion": "2.56.0",
-    "commit": "8922f4920ec15bf261c2d237f283f3e161b86acb",
+    "commit": "6d29a0ed32d8e06f41039fab99755e7bd3be14c9",
     "plugin": {
         "id": "Orryx",
         "version": "2.56.0",
-        "commit": "8922f4920ec15bf261c2d237f283f3e161b86acb"
+        "commit": "6d29a0ed32d8e06f41039fab99755e7bd3be14c9"
     },
     "types": {
         "any": {
@@ -20637,6 +20637,71 @@
             "source": {
                 "symbol": "directRelease",
                 "group": "普通语句",
+                "registry": "ScriptManager.wikiActions"
+            }
+        },
+        {
+            "id": "orryx.action.dmzstudio.play-run-stop.854e64c1e84f",
+            "name": "dmzstudio",
+            "aliases": [],
+            "category": "combat",
+            "namespace": "orryx",
+            "shared": true,
+            "visibility": "public",
+            "description": "play 返回独立施放 ID；run 等待并随脚本取消；stop 只停止当前玩家指定施放。预览不触发战斗事件。",
+            "syntax": "dmzstudio play|run|stop <STRING>",
+            "deprecated": null,
+            "builtin": true,
+            "flow": "normal",
+            "inputs": [
+                {
+                    "name": "操作",
+                    "key": "play|run|stop",
+                    "type": "keyword",
+                    "acceptedTypes": [
+                        "keyword"
+                    ],
+                    "required": true,
+                    "default": null,
+                    "description": "操作",
+                    "keyword": "play|run|stop",
+                    "keywordAlternatives": [
+                        "play|run|stop"
+                    ],
+                    "ketherFillable": false,
+                    "rawType": "kether.keyword"
+                },
+                {
+                    "name": "工程 ID 或施放 ID",
+                    "key": "工程 ID 或施放 ID",
+                    "type": "text",
+                    "acceptedTypes": [
+                        "text"
+                    ],
+                    "required": true,
+                    "default": null,
+                    "description": "工程 ID 或施放 ID",
+                    "ketherFillable": true,
+                    "rawType": "java.lang.String"
+                }
+            ],
+            "output": null,
+            "outputStatus": "none",
+            "examples": [
+                "dmzstudio run \"frost_hammer\""
+            ],
+            "example": "dmzstudio run \"frost_hammer\"",
+            "execution": {
+                "thread": "main",
+                "suspends": true,
+                "contexts": [
+                    "generic"
+                ]
+            },
+            "requirements": [],
+            "source": {
+                "symbol": "dmzstudio",
+                "group": "DMZ 技能工坊",
                 "registry": "ScriptManager.wikiActions"
             }
         },
@@ -50763,7 +50828,7 @@
             "id": "orryx.selector.team.6b6c611b06e6",
             "name": "team",
             "aliases": [],
-            "description": "只保留队内人员，或只保留队外人员；未安装 DungeonPlus 时队伍为空",
+            "description": "只保留队内人员，或只保留队外人员；支持 DMZ 队伍、原版队伍及已启用的 DungeonPlus",
             "syntax": "@team",
             "params": [],
             "examples": [
@@ -50775,7 +50840,7 @@
             "id": "orryx.selector.teammate.a55192ca1530",
             "name": "teammate",
             "aliases": [],
-            "description": "dp队员",
+            "description": "队伍成员",
             "syntax": "@teammate",
             "params": [],
             "examples": [

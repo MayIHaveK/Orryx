@@ -1,0 +1,68 @@
+{
+    "$schema": "https://mayihavek.github.io/Orryx/kether/contracts/release-manifest-v1.schema.json",
+    "formatVersion": 1,
+    "releaseId": "Orryx@2.56.0+6d29a0ed32d8e06f41039fab99755e7bd3be14c9",
+    "channel": "snapshot",
+    "plugin": {
+        "id": "Orryx",
+        "version": "2.56.0",
+        "commit": "6d29a0ed32d8e06f41039fab99755e7bd3be14c9"
+    },
+    "schemaVersion": 3,
+    "generatedAt": "2026-11-26T02:44:12Z",
+    "previousReleaseId": "Orryx@2.54.130+31996f8244b16cd4629971c4bea417702184d49b",
+    "assets": {
+        "registry": {
+            "path": "kether-registry.json",
+            "mediaType": "application/json",
+            "bytes": 4105843,
+            "sha256": "8d1a3c41779952758b7192e50b4434a3b35f7d6d0d67c6743b766877c4f29ada"
+        },
+        "registryContract": {
+            "path": "kether-registry.schema.json",
+            "mediaType": "application/schema+json",
+            "bytes": 7935,
+            "sha256": "298c997a400d06605c3f5c050c629e47ef764253b19181e523f6a9d5ec47f080"
+        },
+        "schema": {
+            "path": "actions-schema.json",
+            "mediaType": "application/json",
+            "bytes": 2089480,
+            "sha256": "a716410d2c354409f2d717a52ca763c5826c44c721e0db98aecc35b24821f351"
+        },
+        "schemaContract": {
+            "path": "actions-schema.schema.json",
+            "mediaType": "application/schema+json",
+            "bytes": 2715,
+            "sha256": "e7d179e3cb7c96f0789a5c0994840b5a856e8ff2df72b09754c64743fc373bc8"
+        },
+        "markdown": {
+            "path": "docs.md",
+            "mediaType": "text/markdown; charset=utf-8",
+            "bytes": 272011,
+            "sha256": "f39da2a9ef8aad0b5bb1a1077c6c0d3962d7467b0c4eb2f082244102baf15b49"
+        },
+        "changes": {
+            "path": "changes.json",
+            "mediaType": "application/json",
+            "bytes": 3199,
+            "sha256": "96efb3fabd58d19bd0ba3e80566e42e0b9c2ae8f7a61fd9eb4680926fa464dbf"
+        },
+        "checksums": {
+            "path": "checksums.json",
+            "mediaType": "application/json",
+            "bytes": 667,
+            "sha256": "7a9a81753101808c3446e6e591dea365db1c618acc6be9babff8ba74395087a2"
+        }
+    },
+    "counts": {
+        "actions": 462,
+        "selectors": 36,
+        "triggers": 99,
+        "properties": 31
+    },
+    "compatibility": {
+        "minimumEditorManifestFormat": 1,
+        "minimumEditorSchemaVersion": 3
+    }
+}

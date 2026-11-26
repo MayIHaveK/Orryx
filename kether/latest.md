@@ -1040,6 +1040,25 @@ cp papi send a,b,c they "@self"
 
 > 检测当前位置是否在主线程运行
 
+# DMZ 技能工坊
+
+## dmzstudio
+
+### 执行统一技能工程（公有语句）
+
+> `dmzstudio play|run|stop <STRING>`
+
+| 先导词 | 类型 | 可选 | 描述 |
+|--------|------|------|------|
+| play|run|stop | SYMBOL | false | 操作 |
+| 无 | STRING | false | 工程 ID 或施放 ID |
+
+> play 返回独立施放 ID；run 等待并随脚本取消；stop 只停止当前玩家指定施放。预览不触发战斗事件。
+
+```yaml
+dmzstudio run "frost_hammer"
+```
+
 # DragonCore附属语句
 
 ## dragoncore
@@ -7611,16 +7630,16 @@ press bar clear they @self
 
 > `@team `
 
-> 只保留队内人员，或只保留队外人员；未安装 DungeonPlus 时队伍为空
+> 只保留队内人员，或只保留队外人员；支持 DMZ 队伍、原版队伍及已启用的 DungeonPlus
 
 > @team
 > !@team
 
-### dp队员
+### 队伍成员
 
 > `@teammate `
 
-> dp队员
+> 队伍成员
 
 > @teammate
 
